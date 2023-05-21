@@ -19,20 +19,22 @@ const char *ssid     = "xxxxxxx";                         /// nastavení wifi p�
 const char *password = "xxxxxxxx";
 
 ///--------------verze---------
-String verze = "1.9.3";
+String verze = "1.9.5";
 
 /// ------- ID APRS -------------------------
 String call = "OK5TVR-15";
-String lon = "4947.18N"; //pozice igate
+String lon = "4947.18N"; //4947.18NI01317.10E
 String lat = "01317.10E";
-String sym = "I";
+String sym = "L";
+String tool = " OK5TVR_RX_Igate_LoRA";
 float Alt = 324.0;
+String aprs_filter ="";
 
-//aprs setup						/// nastavení aprs serveru
+//aprs setup
 char servername[] = "czech.aprs2.net";
 long aprs_port = 14580;
 String user = call;
-String password_aprs = "xxxxxx";
+String password_aprs = "24495";
 
 #define BUFFER_SIZE 5
 char buffer[BUFFER_SIZE][10]; // 5 řetězců o maximální délce 20 znaků call
@@ -42,6 +44,7 @@ char buffer_pak[BUFFER_SIZE][256]; // 5 řetězců o maximální délce 256 znak
 char buffer_cas[BUFFER_SIZE][10]; // 5 řetězců o maximální délce 20 znaků cas odeslání
 char buffer_vzdalenost[BUFFER_SIZE][10];
 char buffer_azimut[BUFFER_SIZE][10];
+char buffer_icona[BUFFER_SIZE][400];
 
 byte cnt = 0;
 
@@ -53,21 +56,43 @@ byte cnt = 0;
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RST);
 
-// Set your Static IP address					/// nastavení pevné ip
+// Set your Static IP address
 IPAddress local_IP(192, 168, 1, 189);
 // Set your Gateway IP address
 IPAddress gateway(192, 168, 1, 1);
 
 IPAddress subnet(255, 255, 255, 0);
-IPAddress primaryDNS(192, 168, 1, 1);   
-IPAddress secondaryDNS(192, 168, 1, 1); 
+IPAddress primaryDNS(192, 168, 1, 1);   //optional
+IPAddress secondaryDNS(192, 168, 1, 1); //optional
+
+
 
 WiFiClient client;
 WiFiUDP ntpUDP;
 
 
-NTPClient timeClient(ntpUDP, "0.cz.pool.ntp.org", 3600, 60000); /// nastavení ntp serveru
+NTPClient timeClient(ntpUDP, "0.cz.pool.ntp.org", 3600, 60000);
 AsyncWebServer server(80);
+
+
+///-------------------aprs symboly base64
+String digi = "iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAIAAABL1vtsAAAAvklEQVQ4ja2UsQ6DMBBDDbrBQ4d8asd+AmM/laGDhwwMUSm9hAsCLLbED8enZLDRcE0GQFmn/TSOFyMA6CA4kROlKGaEWJ0kTyLSO61ZgiANhCRJnP7+XHBN0GCjlYk4T1d6CQCNP0RNmZ+zS+H8qIe6LhR/eqTyOdx2G+ou3LKylFUozQ0NRFd1ox7h6qCRxvmzWwq2E6n9B+u8e6jBidAqEvFN9aNp+YvCa/a1Bf4O4qB2uzioe16t4frzuwDPVmVTXnQbfgAAAABJRU5ErkJggg==";
+
+String wx = "iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAIAAABL1vtsAAAA0klEQVQ4ja2UMRLEIAhFfxwKihS5/yktUlCk2AKXIGrirEuFCN9HlGyUCGtGAOSSn+uZOC0iFIqBfIzINS3RFvt4KxQbGdU/JKTn7RmVapVPAHLs7JY49tuxHIA7FExxDxDneJ89SEDnWsWWDCCf0suJEi0F1y3wsaPOiTeiJ5TmbRl2g3XuIJ8CsMMuEYVSX7m6FOW0hpb1pr7xiuWWkEt7Lid433DM9290o0Q2qZNPC+6Zx0kdDdKoXi1+i1eVNqGDrklLwz6JY/aHv9a2/vv9AESJS86PXo3VAAAAAElFTkSuQmCC";
+
+String car = "iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAIAAABL1vtsAAAA6klEQVQ4jd1UOwrDMAx9EW/wmGP4ABk8htKDe/RggsYcoYMpGTOE0sGQuHFKS7PVPIyR9XmSJTcU4twigHmZf7Y3NHKSAoA/d6GqhqaEqr71QeHyWErEIVKY7invGbVaBoV7FqrqOndLt0NqXyXiOhdiqPVCDK5znxO5Xq4Ufok1ka27VdV7PxbeLTDWMQELhBimaWrbFkBDYW5wQzNWqocu8tVqdfCoFrAAKvtVvi/FepqX2dAA6PsegPV+LIjYQo7XydxYqGpWKsMeBt9Pdq5tuqeyryiMQ6z7rZZTuJXzt/VP/0Vz/vt9Agg9sUUoI+f4AAAAAElFTkSuQmCC";
+
+String chodec = "iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAIAAABL1vtsAAAAv0lEQVQ4jdVUOw6DMAw11hvecTp04DioYuBIDAw5TgeGHieDhTpYQghcPs2E5SV2bL/Yz6mgkDKBiGTLf8cT1EIIInKXFAQJlqLom8eOd2+ixOdMgRhFauvU1jOELvUr4wGK7b2+6VJ7EYWINMP7pFGgsMlWOryeNhl0hI5Q+DFUKOIU7lvqryxQXBhq2MugF04kgh6WLR8uYcgL71nnwQTdki0mWAXFsg7BbdmZ4KFrjSKEvf+Wuyz7oVTl3+8XnnyPapycuG4AAAAASUVORK5CYII=";
+
+String sanita = "iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAIAAABL1vtsAAAA3ElEQVQ4jd1UMRLDIAxTOA8aGHhGn8nA9X0d8wyGDB64Xgda4gTSoenQqy8DUWwhW5BJnOBcCAAt+nE9he6kBAB/Q7HaQeH71KOpbxzNS26EgNp18IHCIcumEZK2fvZh9qFxxRSHSidxUrkpbCpI3kz2ZcnBhyqzLlpfFO6OZt2fqnvBWlRVAeZFa1/jRl6ate7cJBhSNTN6xv6CWHozXT3AOxU2z74e4cNGACCmaLNtgf20hjgp99IecSJO0jX1eAV7fDW1RTW/P0VDvDcVw+L3+G/c1C9QTOd/vw+f+Xxz2dKM7wAAAABJRU5ErkJggg==";
+
+String red_dot = "iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAIAAABL1vtsAAAAfElEQVQ4je2UPQ6AMAhGX5tv4Dg9kkOP5eCROE4HBxfTOFj/mhgHvwkCvBACBEXRJwFlLo/rTRY7WwB+xHuIbC5zGdkeIbL5tJo+cUAJitpdLZelagOQ9tJOVssPYhs1EWlYKb5x7yEYSy1LA4zNO2rO4qL+M/sgIvS/3wXFgxtzEcFPQAAAAABJRU5ErkJggg==";
+
+String kolo = "iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAIAAABL1vtsAAAAq0lEQVQ4je1UMQrDMAyUxQ0aOuT/L/JgOusZHkzxIEIHgXBCY2hDC4EKY7BPdzqB7AQGnQsQUbf+MV8gfNICEf0lfi8hkLclBDLSuvWJymw058VfSwTHy9ZWiWi5LX4c0ZHFIz+X7LTIdn7k1FZzyXt3YNhqthoY7dFi91XuxRN2qFP8ftOIqtZWVTXcCiRcjOgYCYxIOup2ggpk42L+6o/QCw341yXS+e/3CUchZQSPlRXZAAAAAElFTkSuQmCC";
+
+String igate = "iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAYAAADEtGw7AAAAoElEQVRIib3VSw4EIQgE0ILUgvufthemmdUkxPaDPTqsqReDEoVKx4EiAFzl2ooaDbpVDJWGjQaj7YUjmMWncAvK4EM4AuUuKHdJ4124Dro73H3YM4VXLqnX+4BX0FFGZw1v8f8syC+rXWcfJ36DtzLNUazgvd7ujOuAiEBE0gcYXl4MUgkqU+gU7gGZUaWeW4Sy8+e8ZQ381rEFkVOf6Qe4gj5VFW9A0wAAAABJRU5ErkJggg==";
+
+String lgate = "iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAYAAADEtGw7AAAAn0lEQVRIib2V0Q6FIAxDK85k//+1JmjufTIhuI2i4J7bQxlbWCTJDxNKAGA/9qFQFUUaSiyKBqsoVHQsuASy8CbYAjHwEKyiyGdGPnM33AUzqSKNCe55JE97A/dAI09qCZ7Cv1mQN6tde2+Jn8Atj3jCumf1LG/rFgZxe8wkjzRm4tJ4Jes9uDkVFoC5DTVuJYh93LAVHpypaQuyzPpM/6BgO2Ce0xXHAAAAAElFTkSuQmCC";
 
 long cas_dif =0;
 const char index_html[] PROGMEM = R"rawliteral(
@@ -111,7 +136,7 @@ h3 { font-size: 1rem;}
 </h3></div>
 
 <div class="card" id="pak1">
-  <h4>%PAK1% - %vz0% km - %az0% &deg;</h4>
+  <h4><img src="data:image/jpeg;base64,%icona64_0%" alt="Base64 obrázek"> %PAK1% - %vz0% km - %az0% &deg;</h4>
   <button onclick="toggleTable()">Zobrazit data</button>
   <table id="myTable" style="display: none;">
      <tr>
@@ -141,7 +166,7 @@ h3 { font-size: 1rem;}
 </script>
 
 <div class="card" id="pak2">
-  <h4>%PAK2% - %vz1% km - %az1% &deg;</h4>
+  <h4><img src="data:image/jpeg;base64,%icona64_1%" alt="Base64 obrázek">%PAK2% - %vz1% km - %az1% &deg;</h4>
   <button onclick="toggleTable1()">Zobrazit data</button>
   <table id="myTable1" style="display: none;">
      <tr>
@@ -171,7 +196,7 @@ h3 { font-size: 1rem;}
 </script>
 
 <div class="card" id="pak3">
-  <h4>%PAK3% - %vz2% km - %az2% &deg;</h4>
+  <h4><img src="data:image/jpeg;base64,%icona64_2%" alt="Base64 obrázek">%PAK3% - %vz2% km - %az2% &deg;</h4>
   <button onclick="toggleTable2()">Zobrazit data</button>
   <table id="myTable2" style="display: none;">
      <tr>
@@ -201,7 +226,7 @@ h3 { font-size: 1rem;}
 </script>
 
 <div class="card" id="pak4">
-  <h4>%PAK4% - %vz3% km - %az3% &deg;</h4>
+  <h4><img src="data:image/jpeg;base64,%icona64_3%" alt="Base64 obrázek">%PAK4% - %vz3% km - %az3% &deg;</h4>
   <button onclick="toggleTable3()">Zobrazit data</button>
   <table id="myTable3" style="display: none;">
      <tr>
@@ -231,7 +256,7 @@ h3 { font-size: 1rem;}
 </script>
 
 <div class="card" id="pak5">
-  <h4>%PAK5% - %vz4% km - %az4% &deg;</h4>
+  <h4><img src="data:image/jpeg;base64,%icona64_4%" alt="Base64 obrázek">%PAK5% - %vz4% km - %az4% &deg;</h4>
   <button onclick="toggleTable4()">Zobrazit data</button>
   <table id="myTable4" style="display: none;">
      <tr>
@@ -401,15 +426,36 @@ else if (var == "IP_adr"){
        else if (var == "az4"){
     return String(buffer_azimut[4]);
   }
+  else if (var == "icona64_0"){
+    return String(buffer_icona[0]);
+  }
+    else if (var == "icona64_1"){
+    return String(buffer_icona[1]);
+  }
+    else if (var == "icona64_2"){
+    return String(buffer_icona[2]);
+  }
+    else if (var == "icona64_3"){
+    return String(buffer_icona[3]);
+  }
+    else if (var == "icona64_4"){
+    return String(buffer_icona[4]);
+  }
+    else if (var == "URL1"){
+    return String(verze);
+  }
 return String();
 }
 
-void con_aprs();
 void wifi();
+void con_aprs();
+
+
 
 //--cas--
 long cas_new = 0;
 long cas_old = 0;
+long cas_reset = 0;
 
 // --- lora ---
 const int lora_SS = 18;    // LoRa radio chip select
@@ -480,13 +526,23 @@ double calculateAzimuth(double lat1, double lon1, double lat2, double lon2) {
   return azimuth;
 }
 
+///---------ověřuje spránost paketů 
+bool isASCII(const String& str) {
+  for (size_t i = 0; i < str.length(); i++) {
+    if (str.charAt(i) > 127) {
+      return false;
+    }
+  }
+  return true;
+}
+
 void setup() {
 
 pinMode(lora_DIO0, INPUT);
 
 Serial.begin(9600);
 delay(500);
-Serial.print("Start digi_RX");
+Serial.print("Start digi_RX wifi");
 
   if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
     Serial.println("STA Failed to configure");
@@ -537,9 +593,11 @@ timeClient.begin();
 timeClient.update();
 cas_new = timeClient.getEpochTime();
 cas_old = timeClient.getEpochTime();
+cas_reset = timeClient.getEpochTime();
 
-con_aprs();
+
 server.begin();
+con_aprs(); 
 
 server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
   request->send_P(200, "text/html",index_html,procesor);
@@ -552,6 +610,8 @@ server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request){
 }
 
 void loop() {
+jump:
+
 String paket ="";
 String paket1 ="";
 String gpslan = "";
@@ -567,18 +627,28 @@ else {
   Serial.println ("wifi no connect....");
   wifi();
 }
-
+if(cas_reset-cas_new>7200){
+  esp_restart();
+}
 if((cas_new - cas_old) > 1200){
-if (!client.connected()) {
-    Serial.println();
-    Serial.println("reconnecting.");
+if (client.connected()) {
+  
+  client.println(call + ">APZ023,TCPIP*:!" + lon + sym + lat +"&PHG01000/IGATE_LoRa"); 
+  client.flush();
+  while (client.available()) {
+      String response = client.readStringUntil('\n');
+      Serial.println("Odpověď od APRS serveru:");
+      Serial.println(response);
+    }
+  } else {
+    Serial.println("Spojení s APRS serverem bylo přerušeno");
+    // Připojení znovu
+    client.stop();
     con_aprs();
-  }else{
-   client.println(call + ">APZ023,TCPIP*:!" + lon + sym + lat +"&PHG01000/IGATE_LoRa"); 
   }
 cas_old = timeClient.getEpochTime();
 }
-client.available();
+
 int packetSize = LoRa.parsePacket();
   if (packetSize) {
     Serial.print("Received packet: ");
@@ -590,7 +660,7 @@ int packetSize = LoRa.parsePacket();
      // WebSerial.print((char)LoRa.read());
     }
     Serial.println(paket);
-    
+
     Serial.print(" with RSSI ");
     // WebSerial.print(" with RSSI ");
     Serial.println(LoRa.packetRssi());
@@ -611,17 +681,37 @@ int packetSize = LoRa.parsePacket();
     //paket = "}" + paket;
     //paket.replace(",", ">");
   }
+    //---otestuje zda pokat obsahuje pouze asci znaky
+  if (isASCII(paket)) {
+    Serial.println("Řetězec obsahuje pouze znaky z ASCII tabulky.");
+
+  } else {
+    Serial.println("Řetězec obsahuje znaky mimo rozsah ASCII tabulky.");
+      // Kód, na který skočíme
+    Serial.println("Skok na řádek s error paket");
+    goto jump;
+  }
+
+
+
     Serial.println(timeClient.getFormattedTime());
     Serial.println(">>>" + paket);
 
-  if (!client.connected()) {
-    Serial.println();
-    Serial.println("reconnecting.");
+if (client.connected()) {
+  
+  client.println(paket); 
+  client.flush();
+  while (client.available()) {
+      String response = client.readStringUntil('\n');
+      Serial.println("Odpověď od APRS serveru:");
+      Serial.println(response);
+    }
+  } else {
+    Serial.println("Spojení s APRS serverem bylo přerušeno PA " + client.connected());
+    // Připojení znovu
+    client.stop();
     con_aprs();
   }
-    client.println("");
-    client.println(paket);
-    client.println("");
 
      int pos = paket.indexOf(">");
     // Pokud je pozice nalezena
@@ -684,11 +774,30 @@ int packetSize = LoRa.parsePacket();
     strcpy(buffer_vzdalenost[cnt], buffer_vzdalenosta);
     strcpy(buffer_azimut[cnt], buffer_azimuta);
 
+    ////-----------icona stanice ---------
+    if (icona == "/#") { strcpy(buffer_icona[cnt], digi.c_str());};
+    if (icona == "R#") { strcpy(buffer_icona[cnt], digi.c_str());};
+    if (icona == "/r") { strcpy(buffer_icona[cnt], digi.c_str());};
+    if (icona == "1#") { strcpy(buffer_icona[cnt], digi.c_str());};
+    if (icona == "/>") { strcpy(buffer_icona[cnt], car.c_str());};
+    if (icona == "L&") { strcpy(buffer_icona[cnt], lgate.c_str());};
+    if (icona == "I&") { strcpy(buffer_icona[cnt], igate.c_str());};
+    if (icona == "/_") { strcpy(buffer_icona[cnt], wx.c_str());};
+    if (icona == "/[") { strcpy(buffer_icona[cnt], chodec.c_str());};
+    if (icona == "//") { strcpy(buffer_icona[cnt], red_dot.c_str());};
+    if (icona == "/a") { strcpy(buffer_icona[cnt], sanita.c_str());};
+    if (icona == "/b") { strcpy(buffer_icona[cnt], kolo.c_str());};
+
+   ///--------- vymazání času pro reset ESP32
+      cas_reset = timeClient.getEpochTime();
    ///---pocet pro buffer----
     cnt = cnt + 1;
     if (cnt==5) {
       cnt=0;
       }
+
+      
+
       ///--- zobrazení oled
 display.clearDisplay();
 display.setTextColor(WHITE);
@@ -700,34 +809,33 @@ display.setCursor(2,18);
 display.print(buffer[0]);
 display.setCursor(60,18);
 display.print(buffer_RSSI[0]);
-display.setCursor(100,18);
+display.setCursor(95,18);
 display.print(buffer_SN[0]);
 display.setCursor(2,27);
 display.print(buffer[1]);
 display.setCursor(60,27);
 display.print(buffer_RSSI[1]);
-display.setCursor(100,27);
+display.setCursor(95,27);
 display.print(buffer_SN[1]);
 display.setCursor(2,36);
 display.print(buffer[2]);
 display.setCursor(60,36);
 display.print(buffer_RSSI[2]);
-display.setCursor(100,36);
+display.setCursor(95,36);
 display.print(buffer_SN[2]);
 display.setCursor(2,46);
 display.print(buffer[3]);
 display.setCursor(60,46);
 display.print(buffer_RSSI[3]);
-display.setCursor(100,46);
+display.setCursor(95,46);
 display.print(buffer_SN[3]);
 display.setCursor(2,55);
 display.print(buffer[4]);
 display.setCursor(60,55);
 display.print(buffer_RSSI[4]);
-display.setCursor(100,55);
+display.setCursor(95,55);
 display.print(buffer_SN[4]);
 display.display();
-
 
     }  
   }
@@ -736,19 +844,24 @@ display.display();
 void con_aprs() {
 Serial.println("\nStarting connection...");
     // if you get a connection, report back via serial:
+    
     if (client.connect(servername, aprs_port)) {
       Serial.println("connected");
       // Make a HTTP request:
       client.println("");
       client.println("user " + user + " pass " + password_aprs + " vers " + " OK5TVR_RX_Igate_LoRA");
+      client.flush();
       client.println("");
       client.println(call + ">APZ023,TCPIP*:!" + lon + sym + lat +"&PHG01000/IGATE_LoRa");
+      client.flush();
       }
 }
 
 void wifi(){
-    WiFi.setHostname("lora_igate");
+    WiFi.setHostname("lora_RX_igate");
+    WiFi.hostname("lora_RX_igate");
     WiFi.begin(ssid, password);
+   
     
 
   while ( WiFi.status() != WL_CONNECTED ) {
@@ -759,5 +872,4 @@ void wifi(){
 IP = WiFi.localIP().toString();
 Serial.println (WiFi.localIP());
 }
-
 
