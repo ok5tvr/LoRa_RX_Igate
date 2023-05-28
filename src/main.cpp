@@ -13,13 +13,14 @@
 #include <math.h>
 #include <string>
 
-//--------wifi
-String IP = "000.000.000.000";                            /// <- needitovat
-const char *ssid     = "xxxxxxx";                         /// nastavení wifi připojení
-const char *password = "xxxxxxxx";
+
+//--------wifi-----------------
+String IP = "000.000.000.000";
+const char *ssid     = "xxxxxx";
+const char *password = "xxxxxx";
 
 ///--------------verze---------
-String verze = "1.9.5";
+String verze = "2.0.0";
 
 /// ------- ID APRS -------------------------
 String call = "OK5TVR-15";
@@ -34,7 +35,7 @@ String aprs_filter ="";
 char servername[] = "czech.aprs2.net";
 long aprs_port = 14580;
 String user = call;
-String password_aprs = "24495";
+String password_aprs = "xxxxx";
 
 #define BUFFER_SIZE 5
 char buffer[BUFFER_SIZE][10]; // 5 řetězců o maximální délce 20 znaků call
@@ -92,9 +93,15 @@ String kolo = "iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAIAAABL1vtsAAAAq0lEQVQ4je1UMQrDM
 
 String igate = "iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAYAAADEtGw7AAAAoElEQVRIib3VSw4EIQgE0ILUgvufthemmdUkxPaDPTqsqReDEoVKx4EiAFzl2ooaDbpVDJWGjQaj7YUjmMWncAvK4EM4AuUuKHdJ4124Dro73H3YM4VXLqnX+4BX0FFGZw1v8f8syC+rXWcfJ36DtzLNUazgvd7ujOuAiEBE0gcYXl4MUgkqU+gU7gGZUaWeW4Sy8+e8ZQ381rEFkVOf6Qe4gj5VFW9A0wAAAABJRU5ErkJggg==";
 
+String air = "iVBORw0KGgoAAAANSUhEUgAAABcAAAAXCAIAAABvSEP3AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAFiUAABYlAUlSJPAAAABxSURBVDhP7c7RCoAgDIXhCB9demppKQdkHIeLFkJQfF00tp+2tKcgEWmVcpbHFlbykSsaan/F5lRwr9EC2BW6NOl9rtCqa0kFn3o4TvqQK6axQr5VQWIecio6AbQAswrdd7RWOf9y09uVoFapb/QRuQCUYKj+Z5tT/AAAAABJRU5ErkJggg==";
+
 String lgate = "iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAYAAADEtGw7AAAAn0lEQVRIib2V0Q6FIAxDK85k//+1JmjufTIhuI2i4J7bQxlbWCTJDxNKAGA/9qFQFUUaSiyKBqsoVHQsuASy8CbYAjHwEKyiyGdGPnM33AUzqSKNCe55JE97A/dAI09qCZ7Cv1mQN6tde2+Jn8Atj3jCumf1LG/rFgZxe8wkjzRm4tJ4Jes9uDkVFoC5DTVuJYh93LAVHpypaQuyzPpM/6BgO2Ce0xXHAAAAAElFTkSuQmCC";
 
 long cas_dif =0;
+float temp_cpu = 0;
+double latitude2 = 0;
+double longitude2 = 0;
+
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html><head>
 <meta charset="windows-1250">
@@ -442,7 +449,7 @@ else if (var == "IP_adr"){
     return String(buffer_icona[4]);
   }
     else if (var == "URL1"){
-    return String(verze);
+    return String(temp_cpu);
   }
 return String();
 }
@@ -456,6 +463,14 @@ void con_aprs();
 long cas_new = 0;
 long cas_old = 0;
 long cas_reset = 0;
+long cas_telemetry = 0;
+
+//------telemetrie--------
+long rx_cnt = 0;
+long rf_inet = 0;
+long live = 1;
+String live_s = "001";
+long dx_dist = 0;
 
 // --- lora ---
 const int lora_SS = 18;    // LoRa radio chip select
@@ -536,6 +551,23 @@ bool isASCII(const String& str) {
   return true;
 }
 
+//// -- interní teplota -------
+#ifdef __cplusplus
+
+extern "C" {
+
+#endif
+
+uint8_t temprature_sens_read();
+
+#ifdef __cplusplus
+
+}
+
+#endif
+
+uint8_t temprature_sens_read();
+
 void setup() {
 
 pinMode(lora_DIO0, INPUT);
@@ -594,6 +626,7 @@ timeClient.update();
 cas_new = timeClient.getEpochTime();
 cas_old = timeClient.getEpochTime();
 cas_reset = timeClient.getEpochTime();
+cas_telemetry = timeClient.getEpochTime();
 
 
 server.begin();
@@ -627,8 +660,49 @@ else {
   Serial.println ("wifi no connect....");
   wifi();
 }
-if(cas_reset-cas_new>7200){
+if(cas_new-cas_reset>7200){
   esp_restart();
+}
+
+if(cas_new-cas_telemetry>900){
+  temp_cpu = (temprature_sens_read() - 32) / 1.8;
+  Serial.print ("teplota int: ");
+  Serial.println (temp_cpu);
+  if (client.connected()) {
+  live_s="";
+  if(live<100) { live_s += "0"; }
+  if(live<10)  { live_s+= "0"; }
+  live_s = live_s + live;
+  client.println(call + ">APZ023,TCPIP*:T#"+live_s+","+rx_cnt+","+rf_inet+","+dx_dist+","+live+","+temp_cpu+",00000000");
+  client.flush();
+  live = live + 1;
+  rx_cnt = 0;
+  rf_inet = 0;
+  dx_dist = 0;
+  if (live >= 96){
+    live=0;
+    }
+  cas_telemetry = timeClient.getEpochTime();
+  } else {
+    Serial.println("Spojení s APRS serverem bylo přerušeno");
+    // Připojení znovu
+    client.stop();
+    con_aprs();
+     live_s="";
+  if(live<100) { live_s += "0"; }
+  if(live<10)  { live_s+= "0"; }
+  live_s = live_s + live;
+  client.println(call + ">APZ023,TCPIP*:T#"+live_s+","+rx_cnt+","+rf_inet+","+dx_dist+","+live+","+temp_cpu+",00000000");
+  client.flush();
+  live = live + 1;
+  rx_cnt = 0;
+  rf_inet = 0;
+  dx_dist = 0;
+  if (live >= 96){
+    live=0;
+    }
+  cas_telemetry = timeClient.getEpochTime();
+  }
 }
 if((cas_new - cas_old) > 1200){
 if (client.connected()) {
@@ -684,11 +758,13 @@ int packetSize = LoRa.parsePacket();
     //---otestuje zda pokat obsahuje pouze asci znaky
   if (isASCII(paket)) {
     Serial.println("Řetězec obsahuje pouze znaky z ASCII tabulky.");
-
+    rx_cnt = rx_cnt + 1;
+    rf_inet = rf_inet + 1;
   } else {
     Serial.println("Řetězec obsahuje znaky mimo rozsah ASCII tabulky.");
       // Kód, na který skočíme
     Serial.println("Skok na řádek s error paket");
+    rx_cnt = rx_cnt + 1;
     goto jump;
   }
 
@@ -740,6 +816,22 @@ if (client.connected()) {
   
        int startIndex = paket.indexOf(':'); // Index znaku ':' označující začátek tela paketu
       if (paket.indexOf('@') == -1) {     // paket nemá hodiny
+        if ((paket.substring(startIndex + 2, startIndex + 3)=="/") || (paket.substring(startIndex + 2, startIndex + 3)=="\\")){
+        Serial.println("comprese pozice");
+        icona =  paket.substring(startIndex + 2, startIndex + 3) + paket.substring(startIndex + 11, startIndex + 12);
+        Serial.println(icona);
+
+        String k_lan =paket.substring(startIndex + 3, startIndex + 7);
+        String k_lon =paket.substring(startIndex + 7, startIndex + 11);
+        Serial.println(k_lon);
+        Serial.println(k_lan);
+  
+        // Compute lat/long z komprimovaných dat
+        latitude2 = 90.0-((((((((k_lan.charAt(0)-33)*91.0)+(k_lan.charAt(1)-33))*91.0)+(k_lan.charAt(2)-33))*91.0)+(k_lan.charAt(3)-33))/380926.0);
+        longitude2 = -180.0+((((((((k_lon.charAt(0)-33)*91.0)+(k_lon.charAt(1)-33))*91.0)+(k_lon.charAt(2)-33))*91.0)+(k_lon.charAt(4)-33))/190463.0);
+        
+        }
+        else {
          gpslan = paket.substring(startIndex + 2, startIndex + 9);
          gpslon = paket.substring(startIndex + 11, startIndex + 19);
          icona =  paket.substring(startIndex + 10, startIndex + 11) + paket.substring(startIndex + 20, startIndex + 21); 
@@ -747,11 +839,13 @@ if (client.connected()) {
           Serial.println(gpslon);
           Serial.println(gpslan);
           Serial.println(icona);
+          latitude2 = convertToDecimalDegrees_la(gpslan.c_str());
+          longitude2 = convertToDecimalDegrees_lo(gpslon.c_str());
+      }   
       }      
 
     ///---- výpočet vzdálenosti
-      double latitude2 = convertToDecimalDegrees_la(gpslan.c_str());
-      double longitude2 = convertToDecimalDegrees_lo(gpslon.c_str());
+      
       double latitude1 = convertToDecimalDegrees_la(lon.c_str());
       double longitude1 = convertToDecimalDegrees_lo(lat.c_str());
  
@@ -767,6 +861,11 @@ if (client.connected()) {
        // Převod na string
      char buffer_vzdalenosta[10];
     dtostrf(distance, 1, 2, buffer_vzdalenosta);
+    
+    if (distance > dx_dist) {             ////------------------dx dist ---- telemetrie
+      dx_dist = round(distance);
+      if (dx_dist > 2000){dx_dist=0;};
+    }
 
     char buffer_azimuta[10];
     dtostrf(azimuth, 1, 1, buffer_azimuta);
@@ -787,6 +886,7 @@ if (client.connected()) {
     if (icona == "//") { strcpy(buffer_icona[cnt], red_dot.c_str());};
     if (icona == "/a") { strcpy(buffer_icona[cnt], sanita.c_str());};
     if (icona == "/b") { strcpy(buffer_icona[cnt], kolo.c_str());};
+    if (icona == "/'") { strcpy(buffer_icona[cnt], air.c_str());};
 
    ///--------- vymazání času pro reset ESP32
       cas_reset = timeClient.getEpochTime();
@@ -853,6 +953,19 @@ Serial.println("\nStarting connection...");
       client.flush();
       client.println("");
       client.println(call + ">APZ023,TCPIP*:!" + lon + sym + lat +"&PHG01000/IGATE_LoRa");
+      client.flush();
+      //live_s="";
+  //if(live<100) { live_s += "0"; }
+ // if(live<10)  { live_s+= "0"; }
+ // live_s = live_s + live;
+      //client.println(call + ">APZ023,TCPIP*:T#"+live_s+","+rx_cnt+","+rf_inet+","+dx_dist+","+live+",0,00000000");
+      //Serial.println(call + ">APZ023,TCPIP*:T#"+live_s+","+rx_cnt+","+rf_inet+","+dx_dist+","+live+",0,00000000");
+     // client.flush();
+      client.println(call + ">APZ023,TCPIP*"+"::"+call+":PARM.RxPkts,RF->Inet,DX_dist.,live,Temp_core");
+      client.flush();
+      client.println(call + ">APZ023,TCPIP*"+"::"+call+":UNIT.Pkts,Pkts,km,min.,C");
+      client.flush();
+      client.println(call + ">APZ023,TCPIP*"+"::"+call+":EQNS.0,1,0,0,1,0,0,1,0,0,1,0,0,1,0");
       client.flush();
       }
 }
