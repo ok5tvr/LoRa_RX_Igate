@@ -12,15 +12,17 @@
 #include <APRS-Decoder.h>
 #include <math.h>
 #include <string>
+#include <AsyncElegantOTA.h>
+#include "SPIFFS.h"
 
 
 //--------wifi-----------------
 String IP = "000.000.000.000";
-const char *ssid     = "xxxxxx";
-const char *password = "xxxxxx";
+const char *ssid     = "Vlas_dolni_vlkys";
+const char *password = "xxxxxxx";
 
 ///--------------verze---------
-String verze = "2.0.0";
+String verze = "2.0.1";
 
 /// ------- ID APRS -------------------------
 String call = "OK5TVR-15";
@@ -31,11 +33,16 @@ String tool = " OK5TVR_RX_Igate_LoRA";
 float Alt = 324.0;
 String aprs_filter ="";
 
-//aprs setup
+//---------------aprs setup--------------
 char servername[] = "czech.aprs2.net";
 long aprs_port = 14580;
 String user = call;
-String password_aprs = "xxxxx";
+String password_aprs = "xxxxxx";
+
+///-------------IP adress------------
+// Pokud chcete použít pevnou IP adresu
+bool pouzitPevnouIP = true;
+String ipString = "192.168.1.189";
 
 #define BUFFER_SIZE 5
 char buffer[BUFFER_SIZE][10]; // 5 řetězců o maximální délce 20 znaků call
@@ -65,8 +72,6 @@ IPAddress gateway(192, 168, 1, 1);
 IPAddress subnet(255, 255, 255, 0);
 IPAddress primaryDNS(192, 168, 1, 1);   //optional
 IPAddress secondaryDNS(192, 168, 1, 1); //optional
-
-
 
 WiFiClient client;
 WiFiUDP ntpUDP;
@@ -101,6 +106,10 @@ long cas_dif =0;
 float temp_cpu = 0;
 double latitude2 = 0;
 double longitude2 = 0;
+////-----------nastaveni z config.txt------------
+const int MAX_SETTINGS = 17; // Maximální počet proměnných
+String fileContent = "";
+String nastaveni[MAX_SETTINGS]; // Pole pro uložení proměnných
 
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html><head>
@@ -574,11 +583,25 @@ pinMode(lora_DIO0, INPUT);
 
 Serial.begin(9600);
 delay(500);
+
+///---------------------spiffs-------------------
+if(!SPIFFS.begin(true)){
+    Serial.println("chyba SPIFFS");
+    return;
+  }
+
 Serial.print("Start digi_RX wifi");
 
+////-----------nastavení pevná vs dhcp ip adresa-------
+if (pouzitPevnouIP) {
   if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
     Serial.println("STA Failed to configure");
   }
+  } else {
+    Serial.print("Používá se IP adresa přidělená pomocí DHCP: ");
+  }
+
+
 
 Wire.begin(OLED_SDA, OLED_SCL);
 
@@ -628,7 +651,7 @@ cas_old = timeClient.getEpochTime();
 cas_reset = timeClient.getEpochTime();
 cas_telemetry = timeClient.getEpochTime();
 
-
+AsyncElegantOTA.begin(&server);
 server.begin();
 con_aprs(); 
 
@@ -636,15 +659,106 @@ server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
   request->send_P(200, "text/html",index_html,procesor);
 });
 
-server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request){
-  request->send(200, "text/plain", "update");;
-});
+//server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request){
+//  request->send(200, "text/plain", "update");;
+//});
+
+
+///------------------test cteni souboru----------
+  File file = SPIFFS.open("/config.txt");
+  if(!file){
+    Serial.println("Soubor config.txt neni mozne precist");
+    return;
+  }
+  
+  Serial.println("Soubor konfigurace:");
+  fileContent = "";
+  while (file.available()) {
+    fileContent += char(file.read());
+  }
+  file.close();
+  Serial.println(fileContent);
+
+  // Hledání proměnných v textu
+ nastaveni[1] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+ fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[2] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+ fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[3] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+ fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[4] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+ fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[5] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+  fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[6] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+ fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[7] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+  fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[8] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+ fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[9] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+ fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[10] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+ fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[11] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+  fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[12] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+ fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[13] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+  fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[14] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+ fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[15] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+  fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[16] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+ fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[17] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+
+ Serial.println("promene:");
+ Serial.println(nastaveni[1]);
+ Serial.println(nastaveni[2]);
+ Serial.println(nastaveni[3]);
+ Serial.println(nastaveni[4]);
+ Serial.println(nastaveni[5]);
+ Serial.println(nastaveni[6]);
+ Serial.println(nastaveni[7]);
+ Serial.println(nastaveni[8]);
+ Serial.println(nastaveni[9]);
+ Serial.println(nastaveni[10]);
+ Serial.println(nastaveni[11]);
+ Serial.println(nastaveni[12]);
+ Serial.println(nastaveni[13]);
+ Serial.println(nastaveni[14]);
+ Serial.println(nastaveni[15]);
+ Serial.println(nastaveni[16]);
+ Serial.println(nastaveni[17]);
+
+
+ display.clearDisplay();
+display.setTextColor(WHITE);
+display.setTextSize(2);
+display.setCursor(0,0);
+display.print(call);
+display.setTextSize(1);
+display.setCursor(5,27);
+display.print(F("RX LoRa"));
+display.setCursor(5,36);
+display.print(F("ALL OK"));
+display.setCursor(5,46);
+display.print(F("ver.: "));
+display.setCursor(40,46);
+display.print(verze);
+display.setCursor(5,55);
+display.print(F("IP"));
+display.setCursor(20,55);
+display.print(IP);
+display.display();
 
 }
 
 void loop() {
 jump:
-
+AsyncElegantOTA.loop();
 String paket ="";
 String paket1 ="";
 String gpslan = "";
@@ -905,6 +1019,8 @@ display.setTextSize(1);
 display.setCursor(0,0);
 display.print(call);
 display.setTextSize(1);
+display.setCursor(2,9);
+display.print(IP);
 display.setCursor(2,18);
 display.print(buffer[0]);
 display.setCursor(60,18);
