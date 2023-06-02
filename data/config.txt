@@ -1,23 +1,24 @@
 ///----------------lora RX igate------------
 /// ------------wifi-------------
 wifi ssid <Vlas_dolni_vlkys>
-wifi heslo <xxxxxxxx>
+wifi heslo <xxxxxx>
 
 /// ------- ID APRS -------------------------
 call <OK5TVR-15>
-lon <4947.18N> //4947.18NI01317.10E
-lat <01317.10E>
+lon <4947.18N> // format 49°47,18'N whitout symbol
+lat <01317.10E> // format 13°17,10'E whitout symbol
 sym <L>
-coment < OK5TVR_RX_Igate_LoRA>
+coment < RX_Igate_LoRA by OK5TVR>
 Alt <324.0>
 aprs_filter <>
 
 ///------------aprs setup----------------
 servername <czech.aprs2.net>
 aprs_port <14580>
-password_aprs <xxxxxxx>
+password_aprs <xxxxxx>
 
 ///---------------IP config---------------
+IP_manula <false> // false or true
 local_IP <192.168.1.189>
 gateway <192.168.1.1>
 

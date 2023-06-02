@@ -22,7 +22,7 @@ const char *ssid     = "Vlas_dolni_vlkys";
 const char *password = "xxxxxxx";
 
 ///--------------verze---------
-String verze = "2.0.1";
+String verze = "2.1.0";
 
 /// ------- ID APRS -------------------------
 String call = "OK5TVR-15";
@@ -37,7 +37,7 @@ String aprs_filter ="";
 char servername[] = "czech.aprs2.net";
 long aprs_port = 14580;
 String user = call;
-String password_aprs = "xxxxxx";
+String password_aprs = "xxxxxxx";
 
 ///-------------IP adress------------
 // Pokud chcete použít pevnou IP adresu
@@ -585,10 +585,159 @@ Serial.begin(9600);
 delay(500);
 
 ///---------------------spiffs-------------------
+Serial.println("nastavuji z config.txt");
+
 if(!SPIFFS.begin(true)){
     Serial.println("chyba SPIFFS");
     return;
   }
+
+///------------------test cteni souboruí nastaveni----------
+  File file = SPIFFS.open("/config.txt");
+  if(!file){
+    Serial.println("Soubor config.txt neni mozne precist");
+    return;
+  }
+  
+  Serial.println("Soubor konfigurace:");
+  fileContent = "";
+  while (file.available()) {
+    fileContent += char(file.read());
+  }
+  file.close();
+  Serial.println(fileContent);
+
+  //------------- Hledání proměnných v textu--------------------------------------
+ if (fileContent.length()>1){
+ nastaveni[1] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+ fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[2] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+ fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[3] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+ fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[4] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+ fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[5] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+  fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[6] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+ fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[7] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+  fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[8] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+ fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[9] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+ fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[10] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+ fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[11] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+  fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[12] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+ fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[13] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+  fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[14] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+ fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[15] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+  fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[16] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+ fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[17] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
+ nastaveni[18] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
+
+ Serial.println("promene:");
+ Serial.println(nastaveni[1]);
+ Serial.println(nastaveni[2]);
+ Serial.println(nastaveni[3]);
+ Serial.println(nastaveni[4]);
+ Serial.println(nastaveni[5]);
+ Serial.println(nastaveni[6]);
+ Serial.println(nastaveni[7]);
+ Serial.println(nastaveni[8]);
+ Serial.println(nastaveni[9]);
+ Serial.println(nastaveni[10]);
+ Serial.println(nastaveni[11]);
+ Serial.println(nastaveni[12]);
+ Serial.println(nastaveni[13]);
+ Serial.println(nastaveni[14]);
+ Serial.println(nastaveni[15]);
+ Serial.println(nastaveni[16]);
+ Serial.println(nastaveni[17]);
+Serial.println(nastaveni[18]);
+
+ssid = nastaveni[1].c_str();
+password = nastaveni[2].c_str();
+
+call = nastaveni[3].c_str();
+lon = nastaveni[4].c_str(); 
+lat = nastaveni[5].c_str();
+sym = nastaveni[6].c_str();
+tool = nastaveni[7].c_str();
+Alt = nastaveni[8].toFloat();
+aprs_filter =nastaveni[9].c_str();
+
+nastaveni[10].toCharArray(servername,nastaveni[10].length()+1);
+
+aprs_port = nastaveni[11].toInt();
+user = call;
+password_aprs = nastaveni[12].c_str();
+
+pouzitPevnouIP = nastaveni[13].c_str();
+
+// Set your Static IP address
+uint8_t octed1;
+uint8_t octed2;
+uint8_t octed3;
+uint8_t octed4;
+
+int dot1 = nastaveni[14].indexOf(".");
+int dot2 = nastaveni[14].indexOf(".",dot1 + 1);
+int dot3 = nastaveni[14].indexOf(".",dot2 + 1);
+
+octed1 = nastaveni[14].substring(0,dot1).toInt();
+octed2 = nastaveni[14].substring(dot1+1,dot2).toInt();
+octed3 = nastaveni[14].substring(dot2+1,dot3).toInt();
+octed4 = nastaveni[14].substring(dot3+1).toInt();
+
+IPAddress local_IP(octed1, octed2, octed3, octed4);
+
+// Set your Gateway IP address
+dot1 = nastaveni[15].indexOf(".");
+dot2 = nastaveni[15].indexOf(".",dot1 + 1);
+dot3 = nastaveni[15].indexOf(".",dot2 + 1);
+
+octed1 = nastaveni[15].substring(0,dot1).toInt();
+octed2 = nastaveni[15].substring(dot1+1,dot2).toInt();
+octed3 = nastaveni[15].substring(dot2+1,dot3).toInt();
+octed4 = nastaveni[15].substring(dot3+1).toInt();
+IPAddress gateway(octed1, octed2, octed3, octed4);
+
+dot1 = nastaveni[16].indexOf(".");
+dot2 = nastaveni[16].indexOf(".",dot1 + 1);
+dot3 = nastaveni[16].indexOf(".",dot2 + 1);
+
+octed1 = nastaveni[16].substring(0,dot1).toInt();
+octed2 = nastaveni[16].substring(dot1+1,dot2).toInt();
+octed3 = nastaveni[16].substring(dot2+1,dot3).toInt();
+octed4 = nastaveni[16].substring(dot3+1).toInt();
+IPAddress subnet(octed1, octed2, octed3, octed4);
+
+dot1 = nastaveni[17].indexOf(".");
+dot2 = nastaveni[17].indexOf(".",dot1 + 1);
+dot3 = nastaveni[17].indexOf(".",dot2 + 1);
+
+octed1 = nastaveni[17].substring(0,dot1).toInt();
+octed2 = nastaveni[17].substring(dot1+1,dot2).toInt();
+octed3 = nastaveni[17].substring(dot2+1,dot3).toInt();
+octed4 = nastaveni[17].substring(dot3+1).toInt();
+
+IPAddress primaryDNS(octed1, octed2, octed3, octed4);   //optional
+IPAddress secondaryDNS(octed1, octed2, octed3, octed4); //optional
+
+Serial.println("nastaveno");
+}
+
+
 
 Serial.print("Start digi_RX wifi");
 
@@ -664,74 +813,7 @@ server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
 //});
 
 
-///------------------test cteni souboru----------
-  File file = SPIFFS.open("/config.txt");
-  if(!file){
-    Serial.println("Soubor config.txt neni mozne precist");
-    return;
-  }
-  
-  Serial.println("Soubor konfigurace:");
-  fileContent = "";
-  while (file.available()) {
-    fileContent += char(file.read());
-  }
-  file.close();
-  Serial.println(fileContent);
 
-  // Hledání proměnných v textu
- nastaveni[1] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
- fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
- nastaveni[2] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
- fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
- nastaveni[3] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
- fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
- nastaveni[4] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
- fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
- nastaveni[5] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
-  fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
- nastaveni[6] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
- fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
- nastaveni[7] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
-  fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
- nastaveni[8] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
- fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
- nastaveni[9] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
- fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
- nastaveni[10] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
- fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
- nastaveni[11] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
-  fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
- nastaveni[12] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
- fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
- nastaveni[13] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
-  fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
- nastaveni[14] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
- fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
- nastaveni[15] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
-  fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
- nastaveni[16] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
- fileContent = fileContent.substring(fileContent.indexOf(">")+1,fileContent.indexOf("!"));
- nastaveni[17] =fileContent.substring(fileContent.indexOf("<")+1,fileContent.indexOf(">"));
-
- Serial.println("promene:");
- Serial.println(nastaveni[1]);
- Serial.println(nastaveni[2]);
- Serial.println(nastaveni[3]);
- Serial.println(nastaveni[4]);
- Serial.println(nastaveni[5]);
- Serial.println(nastaveni[6]);
- Serial.println(nastaveni[7]);
- Serial.println(nastaveni[8]);
- Serial.println(nastaveni[9]);
- Serial.println(nastaveni[10]);
- Serial.println(nastaveni[11]);
- Serial.println(nastaveni[12]);
- Serial.println(nastaveni[13]);
- Serial.println(nastaveni[14]);
- Serial.println(nastaveni[15]);
- Serial.println(nastaveni[16]);
- Serial.println(nastaveni[17]);
 
 
  display.clearDisplay();
@@ -821,7 +903,7 @@ if(cas_new-cas_telemetry>900){
 if((cas_new - cas_old) > 1200){
 if (client.connected()) {
   
-  client.println(call + ">APZ023,TCPIP*:!" + lon + sym + lat +"&PHG01000/IGATE_LoRa"); 
+  client.println(call + ">APZ023,TCPIP*:!" + lon + sym + lat +"&PHG01000/"+tool); 
   client.flush();
   while (client.available()) {
       String response = client.readStringUntil('\n');
@@ -1068,7 +1150,7 @@ Serial.println("\nStarting connection...");
       client.println("user " + user + " pass " + password_aprs + " vers " + " OK5TVR_RX_Igate_LoRA");
       client.flush();
       client.println("");
-      client.println(call + ">APZ023,TCPIP*:!" + lon + sym + lat +"&PHG01000/IGATE_LoRa");
+      client.println(call + ">APZ023,TCPIP*:!" + lon + sym + lat +"&PHG01000/" + tool);
       client.flush();
       //live_s="";
   //if(live<100) { live_s += "0"; }
