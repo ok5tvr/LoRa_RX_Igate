@@ -1,4 +1,4 @@
-#LoRa_RX_Igate Update 3.6.2023
+# LoRa_RX_Igate Update 3.6.2023
 Version 2.1.1 is available on GitHub. This version fixes the issue with IP address assignment using the DHCP server. In the settings, the option "IP_manual <true>" corresponds to a static IP address, while "IP_manual <false>" corresponds to automatic IP address assignment.
 
 # LoRa_RX_Igate Update 2.6.2023
