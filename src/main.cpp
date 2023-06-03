@@ -19,10 +19,10 @@
 //--------wifi-----------------
 String IP = "000.000.000.000";
 const char *ssid     = "Vlas_dolni_vlkys";
-const char *password = "xxxxxxx";
+const char *password = "xxxxxx";
 
 ///--------------verze---------
-String verze = "2.1.0";
+String verze = "2.1.1";
 
 /// ------- ID APRS -------------------------
 String call = "OK5TVR-15";
@@ -37,7 +37,7 @@ String aprs_filter ="";
 char servername[] = "czech.aprs2.net";
 long aprs_port = 14580;
 String user = call;
-String password_aprs = "xxxxxxx";
+String password_aprs = "xxxxx";
 
 ///-------------IP adress------------
 // Pokud chcete použít pevnou IP adresu
@@ -682,7 +682,14 @@ aprs_port = nastaveni[11].toInt();
 user = call;
 password_aprs = nastaveni[12].c_str();
 
-pouzitPevnouIP = nastaveni[13].c_str();
+if (strcmp(nastaveni[13].c_str(), "false") == 0){
+pouzitPevnouIP = false;
+ Serial.println("Používá se pevná IP adresa");  
+}
+if (strcmp(nastaveni[13].c_str(), "true") == 0){
+pouzitPevnouIP = true;  
+ Serial.println("Používá se IP adresa přidělená pomocí DHCP: ");
+}
 
 // Set your Static IP address
 uint8_t octed1;
@@ -747,7 +754,7 @@ if (pouzitPevnouIP) {
     Serial.println("STA Failed to configure");
   }
   } else {
-    Serial.print("Používá se IP adresa přidělená pomocí DHCP: ");
+    Serial.println("Používá se IP adresa přidělená pomocí DHCP: ");
   }
 
 

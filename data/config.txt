@@ -1,7 +1,7 @@
 ///----------------lora RX igate------------
 /// ------------wifi-------------
 wifi ssid <Vlas_dolni_vlkys>
-wifi heslo <xxxxxx>
+wifi heslo <xxxxx>
 
 /// ------- ID APRS -------------------------
 call <OK5TVR-15>
@@ -15,10 +15,10 @@ aprs_filter <>
 ///------------aprs setup----------------
 servername <czech.aprs2.net>
 aprs_port <14580>
-password_aprs <xxxxxx>
+password_aprs <xxxxx>
 
 ///---------------IP config---------------
-IP_manula <false> // false or true
+IP_manual <true> // false or true
 local_IP <192.168.1.189>
 gateway <192.168.1.1>
 
