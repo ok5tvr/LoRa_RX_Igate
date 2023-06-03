@@ -2,7 +2,7 @@ git init
 git config --global user.email "vlas.tomas@gmail.com"
 git config --global user.name "Tomáš Vlas"
 git add README.md
-git commit -m "commit 28.5.2023"
+git commit -m "commit 2.6.2023"
 git branch -M main
 git remote add origin https://github.com/ok5tvr/LoRa_RX_Igate.git
 git push -u origin main
