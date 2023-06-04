@@ -1,3 +1,13 @@
+# LoRa_RX_Igate Update 4.6.2023
+Added sending of the status text. Examples of GPS position settings:
+
+4903.50N is 49 degrees 3 minutes 30 seconds north.
+In generic format examples, the latitude is shown as the 8-character string
+ddmm.hhN (i.e. degrees, minutes and hundredths of a minute north).
+07201.75W is 72 degrees 1 minute 45 seconds west.
+In generic format examples, the longitude is shown as the 9-character string
+dddmm.hhW (i.e. degrees, minutes and hundredths of a minute west).
+
 # LoRa_RX_Igate Update 3.6.2023
 Version 2.1.1 is available on GitHub. This version fixes the issue with IP address assignment using the DHCP server. In the settings, the option "IP_manual <true>" corresponds to a static IP address, while "IP_manual <false>" corresponds to automatic IP address assignment.
 
