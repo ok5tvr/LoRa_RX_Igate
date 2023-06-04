@@ -8,6 +8,9 @@ ddmm.hhN (i.e. degrees, minutes and hundredths of a minute north).
 In generic format examples, the longitude is shown as the 9-character string
 dddmm.hhW (i.e. degrees, minutes and hundredths of a minute west).
 
+in config.txt
+ lon <4903.50N> </br> lat <07201.75W>.
+
 # LoRa_RX_Igate Update 3.6.2023
 Version 2.1.1 is available on GitHub. This version fixes the issue with IP address assignment using the DHCP server. In the settings, the option "IP_manual <true>" corresponds to a static IP address, while "IP_manual <false>" corresponds to automatic IP address assignment.
 
