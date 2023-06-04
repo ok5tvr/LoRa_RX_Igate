@@ -22,7 +22,7 @@ const char *ssid     = "Vlas_dolni_vlkys";
 const char *password = "xxxxxx";
 
 ///--------------verze---------
-String verze = "2.1.1";
+String verze = "2.1.2";
 
 /// ------- ID APRS -------------------------
 String call = "OK5TVR-15";
@@ -1171,6 +1171,8 @@ Serial.println("\nStarting connection...");
       client.println(call + ">APZ023,TCPIP*"+"::"+call+":UNIT.Pkts,Pkts,km,min.,C");
       client.flush();
       client.println(call + ">APZ023,TCPIP*"+"::"+call+":EQNS.0,1,0,0,1,0,0,1,0,0,1,0,0,1,0");
+      client.flush();
+       client.println(call + ">APZ023,TCPIP*:>" +"https://github.com/ok5tvr/LoRa_RX_Igate");
       client.flush();
       }
 }
