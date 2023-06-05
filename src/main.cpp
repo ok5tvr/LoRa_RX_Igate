@@ -19,10 +19,10 @@
 //--------wifi-----------------
 String IP = "000.000.000.000";
 const char *ssid     = "Vlas_dolni_vlkys";
-const char *password = "xxxxxx";
+const char *password = "xxxx";
 
 ///--------------verze---------
-String verze = "2.1.2";
+String verze = "2.1.3";
 
 /// ------- ID APRS -------------------------
 String call = "OK5TVR-15";
@@ -37,7 +37,7 @@ String aprs_filter ="";
 char servername[] = "czech.aprs2.net";
 long aprs_port = 14580;
 String user = call;
-String password_aprs = "xxxxx";
+String password_aprs = "xxxx";
 
 ///-------------IP adress------------
 // Pokud chcete použít pevnou IP adresu
@@ -65,13 +65,13 @@ byte cnt = 0;
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RST);
 
 // Set your Static IP address
-IPAddress local_IP(192, 168, 1, 189);
-// Set your Gateway IP address
-IPAddress gateway(192, 168, 1, 1);
+IPAddress local_IP(192,168,1,189);
+//Set your Gateway IP address
+IPAddress gateway(192,168,1,1);
 
-IPAddress subnet(255, 255, 255, 0);
-IPAddress primaryDNS(192, 168, 1, 1);   //optional
-IPAddress secondaryDNS(192, 168, 1, 1); //optional
+IPAddress subnet(255,255,255,0);
+IPAddress primaryDNS(192,168,1,1);   //optional
+IPAddress secondaryDNS(192,168,1,1); //optional
 
 WiFiClient client;
 WiFiUDP ntpUDP;
@@ -684,11 +684,11 @@ password_aprs = nastaveni[12].c_str();
 
 if (strcmp(nastaveni[13].c_str(), "false") == 0){
 pouzitPevnouIP = false;
- Serial.println("Používá se pevná IP adresa");  
+ Serial.println("Používá se IP adresa přidělená pomocí DHCP: ");  
 }
 if (strcmp(nastaveni[13].c_str(), "true") == 0){
 pouzitPevnouIP = true;  
- Serial.println("Používá se IP adresa přidělená pomocí DHCP: ");
+ Serial.println("Používá se  pevná  IP adresa ");
 }
 
 // Set your Static IP address
@@ -706,7 +706,7 @@ octed2 = nastaveni[14].substring(dot1+1,dot2).toInt();
 octed3 = nastaveni[14].substring(dot2+1,dot3).toInt();
 octed4 = nastaveni[14].substring(dot3+1).toInt();
 
-IPAddress local_IP(octed1, octed2, octed3, octed4);
+IPAddress newlocal_IP(octed1, octed2, octed3, octed4);
 
 // Set your Gateway IP address
 dot1 = nastaveni[15].indexOf(".");
@@ -717,7 +717,7 @@ octed1 = nastaveni[15].substring(0,dot1).toInt();
 octed2 = nastaveni[15].substring(dot1+1,dot2).toInt();
 octed3 = nastaveni[15].substring(dot2+1,dot3).toInt();
 octed4 = nastaveni[15].substring(dot3+1).toInt();
-IPAddress gateway(octed1, octed2, octed3, octed4);
+IPAddress newgateway(octed1, octed2, octed3, octed4);
 
 dot1 = nastaveni[16].indexOf(".");
 dot2 = nastaveni[16].indexOf(".",dot1 + 1);
@@ -727,7 +727,7 @@ octed1 = nastaveni[16].substring(0,dot1).toInt();
 octed2 = nastaveni[16].substring(dot1+1,dot2).toInt();
 octed3 = nastaveni[16].substring(dot2+1,dot3).toInt();
 octed4 = nastaveni[16].substring(dot3+1).toInt();
-IPAddress subnet(octed1, octed2, octed3, octed4);
+IPAddress newsubnet(octed1, octed2, octed3, octed4);
 
 dot1 = nastaveni[17].indexOf(".");
 dot2 = nastaveni[17].indexOf(".",dot1 + 1);
@@ -738,10 +738,21 @@ octed2 = nastaveni[17].substring(dot1+1,dot2).toInt();
 octed3 = nastaveni[17].substring(dot2+1,dot3).toInt();
 octed4 = nastaveni[17].substring(dot3+1).toInt();
 
-IPAddress primaryDNS(octed1, octed2, octed3, octed4);   //optional
-IPAddress secondaryDNS(octed1, octed2, octed3, octed4); //optional
+IPAddress newprimaryDNS(octed1, octed2, octed3, octed4);   //optional
+IPAddress newsecondaryDNS(octed1, octed2, octed3, octed4); //optional
 
 Serial.println("nastaveno");
+Serial.println(local_IP);
+
+if (pouzitPevnouIP) {
+  WiFi.config(newlocal_IP, newgateway, newsubnet, newprimaryDNS, newsecondaryDNS);
+  if (!WiFi.config(newlocal_IP, newgateway, newsubnet, newprimaryDNS, newsecondaryDNS)) {
+    Serial.println("STA Failed to configure");
+  }
+  } else {
+    Serial.println("Používá se IP adresa přidělená pomocí DHCP: ");
+  }
+
 }
 
 
@@ -749,11 +760,10 @@ Serial.println("nastaveno");
 Serial.print("Start digi_RX wifi");
 
 ////-----------nastavení pevná vs dhcp ip adresa-------
+
 if (pouzitPevnouIP) {
-  if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
-    Serial.println("STA Failed to configure");
-  }
-  } else {
+  Serial.println("Používá se pevná IP adresa: ");
+   } else {
     Serial.println("Používá se IP adresa přidělená pomocí DHCP: ");
   }
 
@@ -1172,7 +1182,7 @@ Serial.println("\nStarting connection...");
       client.flush();
       client.println(call + ">APZ023,TCPIP*"+"::"+call+":EQNS.0,1,0,0,1,0,0,1,0,0,1,0,0,1,0");
       client.flush();
-       client.println(call + ">APZ023,TCPIP*:>" +"https://github.com/ok5tvr/LoRa_RX_Igate");
+      client.println(call + ">APZ023,TCPIP*:>" +"https://github.com/ok5tvr/LoRa_RX_Igate");
       client.flush();
       }
 }
