@@ -136,19 +136,23 @@ const char index_html[] PROGMEM = R"rawliteral(
 <title>LoRa RX iGate</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-h2 {font-size: 1.8rem; color: white; text-align: center;}
+h2 {font-size: 1.8rem; color: white; text-align: center; margin: 0; padding: 15px 0; line-height: 1.2;}
 h4 {font-size: 1rem;}
 h3 {font-size: 1rem;}
-.topnav {overflow: hidden; background-color: #1b78e2; position: relative;}
+.topnav {overflow: visible; background-color: #1b78e2; position: relative; padding: 15px 0; min-height: 60px;}
 .card {background-color: white; box-shadow: 2px 2px 12px 1px rgba(140,140,140,.5); text-align: center;}
 .cards {max-width: 700px; margin: 0 auto; display: grid; grid-gap: 2rem; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));}
-.setup-button {position: absolute; top: 50%; right: 20px; transform: translateY(-50%); padding: 10px 20px; background-color: #1b78e2; color: white; border: 2px solid white; border-radius: 10px; cursor: pointer; font-weight: bold;}
-.setup-button:hover {background-color: #145ca1;}
+.button-container {position: absolute; top: 50%; right: 20px; transform: translateY(-50%); display: flex; gap: 10px;}
+.setup-button, .ota-button {padding: 12px 24px; background-color: #1b78e2; color: white; border: 2px solid white; border-radius: 10px; cursor: pointer; font-weight: bold; z-index: 1000; font-size: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.3); text-decoration: none;}
+.setup-button:hover, .ota-button:hover {background-color: #145ca1;}
 </style>
 </head><body>
 <div class="topnav">
 <h2>LoRa RX iGate - %CALL%</h2>
-<a href="/nastaveni"><button class="setup-button">Setup</button></a>
+<div class="button-container">
+  <a href="/nastaveni"><button class="setup-button">Setup</button></a>
+  <a href="/update"><button class="ota-button">OTA</button></a>
+</div>
 </div>
 </br>
 <div class="card"><h3>
