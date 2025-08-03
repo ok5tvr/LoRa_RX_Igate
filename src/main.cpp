@@ -1184,7 +1184,7 @@ void loop() {
         LoRa.print("<" + String((char)0xFF) + String((char)0x01) + upravenyPaket);
         LoRa.endPacket();
         digitalWrite(PLED1, LOW);
-        Serial.println("Paket přeposlán přes RF: " + upravenyPaket);
+        Serial.println("Paket přeposlán přes RF: <" + String((char)0xFF) + String((char)0x01) + upravenyPaket);
       } else {
         Serial.println("Paket již byl digipeatován, ignoruji.");
       }
