@@ -504,8 +504,10 @@ void con_aprs() {
   Serial.println("Připojuji se k APRS serveru: " + String(servername) + ":" + String(aprs_port));
   if (client.connect(servername, aprs_port)) {
     Serial.println("Connected to APRS server: " + String(servername) + ":" + String(aprs_port));
+    client.println("");
     client.println("user " + user + " pass " + password_aprs + " vers OK5TVR_RX_Igate_LoRA filter m/1");
     client.flush();
+    client.println("");
     client.println(call + ">APZ023,TCPIP*:!" + lon + sym + lat + "&PHG01000/" + tool);
     client.flush();
     client.println(call + ">APZ023,TCPIP*::" + call + ":PARM.RxPkts,RF->Inet,DX_dist.,live,Temp_core");
@@ -1162,16 +1164,18 @@ void loop() {
       int colonIndex = paket.indexOf(":");
       if (colonIndex >= 0) {
         paket = paket.substring(0, colonIndex) + ",qAS," + call + paket.substring(colonIndex) + "\n";
-        Serial.println("paket igate--> " +paket);
+        
       }
       if (client.connected()) {
+        Serial.println("odesilam paket igate--> " +paket);
+        client.println("");
         client.println(paket);
         client.flush();
         rf_inet++;
-        while (client.available()) {
-          String response = client.readStringUntil('\n');
-          Serial.println("Odpověď od APRS serveru: " + response);
-        }
+        //while (client.available()) {
+         // String response = client.readStringUntil('\n');
+          //Serial.println("Odpověď od APRS serveru: " + response);
+       // }
       } else {
         Serial.println("Spojení s APRS serverem bylo přerušeno");
         client.stop();
