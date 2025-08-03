@@ -36,7 +36,7 @@ float Alt = 324.0;
 String aprs_filter = "10m";
 
 //-------- APRS Setup ------------
-char servername[] = "czech.aprs2.net";
+char servername[] = "rotate.aprs.net";
 long aprs_port = 14580;
 String user = call;
 String password_aprs = "xxxxx";
@@ -501,9 +501,10 @@ void wifi() {
 
 void con_aprs() {
   Serial.println("\nStarting APRS connection...");
+  Serial.println("Připojuji se k APRS serveru: " + String(servername) + ":" + String(aprs_port));
   if (client.connect(servername, aprs_port)) {
-    Serial.println("Connected to APRS server");
-    client.println("user " + user + " pass " + password_aprs + " vers OK5TVR_RX_Igate_LoRA");
+    Serial.println("Connected to APRS server: " + String(servername) + ":" + String(aprs_port));
+    client.println("user " + user + " pass " + password_aprs + " vers OK5TVR_RX_Igate_LoRA filter m/1");
     client.flush();
     client.println(call + ">APZ023,TCPIP*:!" + lon + sym + lat + "&PHG01000/" + tool);
     client.flush();
@@ -516,7 +517,7 @@ void con_aprs() {
     client.println(call + ">APZ023,TCPIP*:>https://github.com/ok5tvr/LoRa_RX_Igate");
     client.flush();
   } else {
-    Serial.println("APRS connection failed");
+    Serial.println("APRS connection failed to: " + String(servername) + ":" + String(aprs_port));
   }
 }
 
@@ -631,11 +632,11 @@ String upravDigipeaterPath(String paket, String digiCall) {
 }
 
 void posliBeacon() {
-  String beacon = "<" + String((char)0xFF) + String((char)0x01) + call + ">APZ023:!" + lon + sym + lat + "&PHG01000 LoRa node " + (digi_AP == 1 ? "AP" : (digi_mode ? "DIGI" : "iGate"));
+  String beacon = call + ">APZ023:!" + lon + sym + lat + "&PHG01000 LoRa node " + (digi_AP == 1 ? "AP" : (digi_mode ? "DIGI" : "iGate"));
   if (digi_mode == 1 || digi_AP == 1) {
     digitalWrite(PLED1, HIGH);
     LoRa.beginPacket();
-    LoRa.print(beacon);
+    LoRa.print("<" + String((char)0xFF) + String((char)0x01) + beacon);
     LoRa.endPacket();
     digitalWrite(PLED1, LOW);
     Serial.println("BEACON vyslán přes RF: " + beacon);
@@ -1161,7 +1162,7 @@ void loop() {
       int colonIndex = paket.indexOf(":");
       if (colonIndex >= 0) {
         paket = paket.substring(0, colonIndex) + ",qAS," + call + paket.substring(colonIndex) + "\n";
-        paket = paket.substring(3);
+        Serial.println("paket igate--> " +paket);
       }
       if (client.connected()) {
         client.println(paket);

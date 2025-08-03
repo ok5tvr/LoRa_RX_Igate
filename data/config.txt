@@ -31,5 +31,4 @@ digi_AP <1>
 ap_password <mojeheslo123>
 
 ///--------beacon-------------
-beacon_text <LoRa test by OK5TVR>
 !
