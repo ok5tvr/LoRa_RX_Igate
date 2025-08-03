@@ -129,11 +129,11 @@ String air = "iVBORw0KGgoAAAANSUhEUgAAABcAAAAXCAIAAABvSEP3AAAAAXNSR0IArs4c6QAAAA
 
 String lgate = "iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAYAAADEtGw7AAAAn0lEQVRIib2V0Q6FIAxDK85k//+1JmjufTIhuI2i4J7bQxlbWCTJDxNKAGA/9qFQFUUaSiyKBqsoVHQsuASy8CbYAjHwEKyiyGdGPnM33AUzqSKNCe55JE97A/dAI09qCZ7Cv1mQN6tde2+Jn8Atj3jCumf1LG/rFgZxe8wkjzRm4tJ4Jes9uDkVFoC5DTVuJYh93LAVHpypaQuyzPpM/6BgO2Ce0xXHAAAAAElFTkSuQmCC";
 
-//-------- HTML pro hlavní stránku --------
+//-------- HTML for Main Page --------
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html><head>
 <meta charset="windows-1250">
-<title>LoRa RX IGate</title>
+<title>LoRa RX iGate</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 h2 {font-size: 1.8rem; color: white; text-align: center;}
@@ -145,7 +145,7 @@ h3 {font-size: 1rem;}
 </style>
 </head><body>
 <div class="topnav">
-<h2>LoRa RX IGate - %CALL%</h2>
+<h2>LoRa RX iGate - %CALL%</h2>
 </div>
 </br>
 <div class="card"><h3>
@@ -155,19 +155,19 @@ h3 {font-size: 1rem;}
         <td colspan="2">%DATUM%</td>
     </tr>
     <tr>
-        <td>Poloha:</td>
+        <td>Location:</td>
         <td>%lon% %lat%</td>
     </tr>
     <tr>
-        <td>Nadmorska vyska:</td>
-        <td>%vys% m.n.m.</td>
+        <td>Altitude:</td>
+        <td>%vys% m a.s.l.</td>
     </tr>
 </table>
 </center>
 </h3></div>
 <div class="card" id="pak1">
-  <h4><img src="data:image/jpeg;base64,%icona64_0%" alt="Base64 obrázek"> %PAK1% - %vz0% km - %az0% &deg;</h4>
-  <button onclick="toggleTable()">Zobrazit data</button>
+  <h4><img src="data:image/jpeg;base64,%icona64_0%" alt="Base64 image"> %PAK1% - %vz0% km - %az0% &deg;</h4>
+  <button onclick="toggleTable()">Show Data</button>
   <table id="myTable" style="display: none;">
      <tr>
     <td>Time:</td>
@@ -194,8 +194,8 @@ h3 {font-size: 1rem;}
   }
 </script>
 <div class="card" id="pak2">
-  <h4><img src="data:image/jpeg;base64,%icona64_1%" alt="Base64 obrázek">%PAK2% - %vz1% km - %az1% &deg;</h4>
-  <button onclick="toggleTable1()">Zobrazit data</button>
+  <h4><img src="data:image/jpeg;base64,%icona64_1%" alt="Base64 image"> %PAK2% - %vz1% km - %az1% &deg;</h4>
+  <button onclick="toggleTable1()">Show Data</button>
   <table id="myTable1" style="display: none;">
      <tr>
     <td>Time:</td>
@@ -222,8 +222,8 @@ h3 {font-size: 1rem;}
   }
 </script>
 <div class="card" id="pak3">
-  <h4><img src="data:image/jpeg;base64,%icona64_2%" alt="Base64 obrázek">%PAK3% - %vz2% km - %az2% &deg;</h4>
-  <button onclick="toggleTable2()">Zobrazit data</button>
+  <h4><img src="data:image/jpeg;base64,%icona64_2%" alt="Base64 image"> %PAK3% - %vz2% km - %az2% &deg;</h4>
+  <button onclick="toggleTable2()">Show Data</button>
   <table id="myTable2" style="display: none;">
      <tr>
     <td>Time:</td>
@@ -250,8 +250,8 @@ h3 {font-size: 1rem;}
   }
 </script>
 <div class="card" id="pak4">
-  <h4><img src="data:image/jpeg;base64,%icona64_3%" alt="Base64 obrázek">%PAK4% - %vz3% km - %az3% &deg;</h4>
-  <button onclick="toggleTable3()">Zobrazit data</button>
+  <h4><img src="data:image/jpeg;base64,%icona64_3%" alt="Base64 image"> %PAK4% - %vz3% km - %az3% &deg;</h4>
+  <button onclick="toggleTable3()">Show Data</button>
   <table id="myTable3" style="display: none;">
      <tr>
     <td>Time:</td>
@@ -278,8 +278,8 @@ h3 {font-size: 1rem;}
   }
 </script>
 <div class="card" id="pak5">
-  <h4><img src="data:image/jpeg;base64,%icona64_4%" alt="Base64 obrázek">%PAK5% - %vz4% km - %az4% &deg;</h4>
-  <button onclick="toggleTable4()">Zobrazit data</button>
+  <h4><img src="data:image/jpeg;base64,%icona64_4%" alt="Base64 image"> %PAK5% - %vz4% km - %az4% &deg;</h4>
+  <button onclick="toggleTable4()">Show Data</button>
   <table id="myTable4" style="display: none;">
      <tr>
     <td>Time:</td>
@@ -306,19 +306,19 @@ h3 {font-size: 1rem;}
   }
 </script>
 </br>
-<p>Připojení:</p>
+<p>Connection:</p>
 <p>RSSI: %RSSI% dBm</p>
 <p>IP: %IP_adr%</p>
-<p>Čas dif: %cas_dif%</p>
-<p>Teplota CPU: %URL1%</p>
+<p>Time Diff: %cas_dif%</p>
+<p>CPU Temperature: %URL1%</p>
 </body></html>
 )rawliteral";
 
-//-------- HTML pro nastavení --------
+//-------- HTML for Settings Page --------
 const char nastaveni_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html><head>
 <meta charset="windows-1250">
-<title>LoRa RX IGate - Nastavení</title>
+<title>LoRa RX iGate - Settings</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 h2 {font-size: 1.8rem; color: white; text-align: center;}
@@ -332,45 +332,45 @@ button:hover {background-color: #145ca1;}
 </style>
 </head><body>
 <div class="topnav">
-<h2>LoRa RX IGate - Nastavení</h2>
+<h2>LoRa RX iGate - Settings</h2>
 </div>
 <div class="card">
-<h3>Editace konfigurace</h3>
+<h3>Edit Configuration</h3>
 <form action="/nastaveni" method="POST">
   <label>WiFi SSID:</label><input type="text" name="ssid" value="%SSID%"><br>
-  <label>WiFi Heslo:</label><input type="text" name="password" value="%PASSWORD%"><br>
-  <label>Volací značka:</label><input type="text" name="call" value="%CALL%"><br>
-  <label>Zem. šířka (lon):</label><input type="text" name="lon" value="%LON%"><br>
-  <label>Zem. délka (lat):</label><input type="text" name="lat" value="%LAT%"><br>
+  <label>WiFi Password:</label><input type="text" name="password" value="%PASSWORD%"><br>
+  <label>Callsign:</label><input type="text" name="call" value="%CALL%"><br>
+  <label>Longitude:</label><input type="text" name="lon" value="%LON%"><br>
+  <label>Latitude:</label><input type="text" name="lat" value="%LAT%"><br>
   <label>Symbol:</label><input type="text" name="sym" value="%SYM%"><br>
-  <label>Komentář:</label><input type="text" name="tool" value="%TOOL%"><br>
-  <label>Nadmořská výška (m):</label><input type="text" name="Alt" value="%ALT%"><br>
-  <label>APRS filtr:</label><input type="text" name="aprs_filter" value="%APRS_FILTER%"><br>
-  <label>APRS server:</label><input type="text" name="servername" value="%SERVERNAME%"><br>
-  <label>APRS port:</label><input type="text" name="aprs_port" value="%APRS_PORT%"><br>
-  <label>APRS heslo:</label><input type="text" name="password_aprs" value="%PASSWORD_APRS%"><br>
-  <label>Použít pevnou IP:</label>
+  <label>Comment:</label><input type="text" name="tool" value="%TOOL%"><br>
+  <label>Altitude (m):</label><input type="text" name="Alt" value="%ALT%"><br>
+  <label>APRS Filter:</label><input type="text" name="aprs_filter" value="%APRS_FILTER%"><br>
+  <label>APRS Server:</label><input type="text" name="servername" value="%SERVERNAME%"><br>
+  <label>APRS Port:</label><input type="text" name="aprs_port" value="%APRS_PORT%"><br>
+  <label>APRS Password:</label><input type="text" name="password_aprs" value="%PASSWORD_APRS%"><br>
+  <label>Use Static IP:</label>
   <select name="pouzitPevnouIP">
     <option value="true" %POUZIT_PEVNOU_IP_TRUE%>true</option>
     <option value="false" %POUZIT_PEVNOU_IP_FALSE%>false</option>
   </select><br>
-  <label>Pevná IP:</label><input type="text" name="local_IP" value="%LOCAL_IP%"><br>
-  <label>Brána:</label><input type="text" name="gateway" value="%GATEWAY%"><br>
-  <label>Maska podsítě:</label><input type="text" name="subnet" value="%SUBNET%"><br>
-  <label>Primární DNS:</label><input type="text" name="primaryDNS" value="%PRIMARY_DNS%"><br>
-  <label>Sekundární DNS:</label><input type="text" name="secondaryDNS" value="%SECONDARY_DNS%"><br>
-  <label>Digi mód:</label>
+  <label>Static IP:</label><input type="text" name="local_IP" value="%LOCAL_IP%"><br>
+  <label>Gateway:</label><input type="text" name="gateway" value="%GATEWAY%"><br>
+  <label>Subnet Mask:</label><input type="text" name="subnet" value="%SUBNET%"><br>
+  <label>Primary DNS:</label><input type="text" name="primaryDNS" value="%PRIMARY_DNS%"><br>
+  <label>Secondary DNS:</label><input type="text" name="secondaryDNS" value="%SECONDARY_DNS%"><br>
+  <label>Digi Mode:</label>
   <select name="digi">
     <option value="0" %DIGI_0%>0 (iGate)</option>
     <option value="1" %DIGI_1%>1 (Digi)</option>
   </select><br>
-  <label>AP mód:</label>
+  <label>AP Mode:</label>
   <select name="digi_AP">
-    <option value="0" %DIGI_AP_0%>0 (Vypnuto)</option>
-    <option value="1" %DIGI_AP_1%>1 (Zapnuto)</option>
+    <option value="0" %DIGI_AP_0%>0 (Off)</option>
+    <option value="1" %DIGI_AP_1%>1 (On)</option>
   </select><br>
-  <label>AP heslo:</label><input type="text" name="ap_password" value="%AP_PASSWORD%"><br>
-  <button type="submit">Uložit a restartovat</button>
+  <label>AP Password:</label><input type="text" name="ap_password" value="%AP_PASSWORD%"><br>
+  <button type="submit">Save and Restart</button>
 </form>
 </div>
 </body></html>
