@@ -142,7 +142,7 @@ h3 {font-size: 1rem;}
 .topnav {overflow: hidden; background-color: #1b78e2; position: relative;}
 .card {background-color: white; box-shadow: 2px 2px 12px 1px rgba(140,140,140,.5); text-align: center;}
 .cards {max-width: 700px; margin: 0 auto; display: grid; grid-gap: 2rem; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));}
-.setup-button {position: absolute; top: 50%; right: 20px; transform: translateY(-50%); padding: 10px 20px; background-color: #1b78e2; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold;}
+.setup-button {position: absolute; top: 50%; right: 20px; transform: translateY(-50%); padding: 10px 20px; background-color: #1b78e2; color: white; border: 2px solid white; border-radius: 10px; cursor: pointer; font-weight: bold;}
 .setup-button:hover {background-color: #145ca1;}
 </style>
 </head><body>

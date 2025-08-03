@@ -1,3 +1,15 @@
+# LoRa_RX_Igate Update 3.8.2025
+LoRa RX iGate/Digi is a program for ESP32-based devices that functions as a LoRa receiver, APRS iGate, or digipeater for radio communication in the 433 MHz band. It enables the reception and processing of APRS packets, forwarding them to an APRS-IS server (in iGate mode), relaying packets (in Digi mode), or operating as a Wi-Fi access point (AP mode). The program includes a web interface for displaying received data and configuring settings, an OLED display for showing information, and support for telemetry (e.g., CPU temperature, packet count). Version 2.1.11 adds the ability to edit the configuration via the web interface at /nastaveni (settings). Main Features:
+
+- **LoRa Packet Reception** – Captures and decodes APRS packets on **433.775 MHz**.  
+- **iGate Mode** – Forwards received packets to an **APRS-IS server** via Wi-Fi.  
+- **Digi Mode** – Relays APRS packets via **LoRa** with support for aliases (e.g., **WIDE1-1**, **WIDE2-2**).  
+- **AP Mode** – Creates a Wi-Fi access point for configuration **without an internet connection**.  
+- **Web Interface** – Displays received packets, distance, azimuth, RSSI, S/N, and configuration options (SSID, password, callsign, GPS coordinates, etc.).  
+- **OLED Display** – Shows status, IP address, callsign, and program version.  
+- **Telemetry** – Sends information about packet count, distance, and CPU temperature.  
+- **OTA Updates** – Supports firmware updates via the **web interface**.  
+
 # LoRa_RX_Igate Update 4.6.2023
 Added sending of the status text. Examples of GPS position settings:</br>
 
