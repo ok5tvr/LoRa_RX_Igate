@@ -631,7 +631,7 @@ String upravDigipeaterPath(String paket, String digiCall) {
 }
 
 void posliBeacon() {
-  String beacon = "<  " + call + ">APZ023:!" + lon + sym + lat + "&PHG01000 LoRa node " + (digi_AP == 1 ? "AP" : (digi_mode ? "DIGI" : "iGate"));
+  String beacon = "<" + String((char)0xFF) + String((char)0x01) + call + ">APZ023:!" + lon + sym + lat + "&PHG01000 LoRa node " + (digi_AP == 1 ? "AP" : (digi_mode ? "DIGI" : "iGate"));
   if (digi_mode == 1 || digi_AP == 1) {
     digitalWrite(PLED1, HIGH);
     LoRa.beginPacket();
@@ -1029,7 +1029,7 @@ void setup() {
   display.setCursor(0, 0);
   display.print(call);
   display.setCursor(70, 0);
-  display.print(digi_AP == 1 ? "AP" : (digi_mode ? "DIGI" : "iGate"));
+  display.print(digi_AP == 1 ? "AP+DIGI" : (digi_mode ? "DIGI" : "iGate"));
   if (digi_mode == 0 || digi_AP == 1) {
     display.setCursor(2, 9);
     display.print(IP);
@@ -1095,7 +1095,7 @@ void loop() {
         con_aprs();
       }
     } else {
-      String telemetry = "<  " + call + ">APZ023:T#" + live_s + "," + rx_cnt + "," + rf_inet + "," + dx_dist + "," + live + "," + temp_cpu + ",00000000";
+      String telemetry = "<" + String((char)0xFF) + String((char)0x01) + call + ">APZ023:T#" + live_s + "," + rx_cnt + "," + rf_inet + "," + dx_dist + "," + live + "," + temp_cpu + ",00000000";
       digitalWrite(PLED1, HIGH);
       LoRa.beginPacket();
       LoRa.print(telemetry);
@@ -1181,7 +1181,7 @@ void loop() {
         String upravenyPaket = upravDigipeaterPath(paket, call);
         digitalWrite(PLED1, HIGH);
         LoRa.beginPacket();
-        LoRa.print("<  " + upravenyPaket);
+        LoRa.print("<" + String((char)0xFF) + String((char)0x01) + upravenyPaket);
         LoRa.endPacket();
         digitalWrite(PLED1, LOW);
         Serial.println("Paket přeposlán přes RF: " + upravenyPaket);
@@ -1268,7 +1268,7 @@ void loop() {
       display.setCursor(0, 0);
       display.print(call);
       display.setCursor(70, 0);
-      display.print(digi_AP == 1 ? "AP" : (digi_mode ? "DIGI" : "iGate"));
+      display.print(digi_AP == 1 ? "AP+DIGI" : (digi_mode ? "DIGI" : "iGate"));
       if (digi_mode == 0 || digi_AP == 1) {
         display.setCursor(2, 9);
         display.print(IP);
