@@ -139,13 +139,16 @@ const char index_html[] PROGMEM = R"rawliteral(
 h2 {font-size: 1.8rem; color: white; text-align: center;}
 h4 {font-size: 1rem;}
 h3 {font-size: 1rem;}
-.topnav {overflow: hidden; background-color: #1b78e2;}
+.topnav {overflow: hidden; background-color: #1b78e2; position: relative;}
 .card {background-color: white; box-shadow: 2px 2px 12px 1px rgba(140,140,140,.5); text-align: center;}
 .cards {max-width: 700px; margin: 0 auto; display: grid; grid-gap: 2rem; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));}
+.setup-button {position: absolute; top: 50%; right: 20px; transform: translateY(-50%); padding: 10px 20px; background-color: #1b78e2; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold;}
+.setup-button:hover {background-color: #145ca1;}
 </style>
 </head><body>
 <div class="topnav">
 <h2>LoRa RX iGate - %CALL%</h2>
+<a href="/nastaveni"><button class="setup-button">Setup</button></a>
 </div>
 </br>
 <div class="card"><h3>
@@ -1153,7 +1156,7 @@ void loop() {
       paket.trim();
       int colonIndex = paket.indexOf(":");
       if (colonIndex >= 0) {
-        paket = paket.substring(0, colonIndex) + ",qAS," + call + paket.substring(colonIndex) + " DS " + LoRa.packetSnr() + " RS " + LoRa.packetRssi() + "\n";
+        paket = paket.substring(0, colonIndex) + ",qAS," + call + paket.substring(colonIndex) + "\n";
         paket = paket.substring(3);
       }
       if (client.connected()) {
