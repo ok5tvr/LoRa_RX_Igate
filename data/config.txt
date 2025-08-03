@@ -1,26 +1,16 @@
-///----------------lora RX igate------------
+//----------------lora RX igate------------
 /// ------------wifi-------------
 wifi ssid <Vlas_dolni_vlkys>
-wifi heslo <xxxxx>
+wifi heslo <tomasV860309>
 
 /// ------- ID APRS -------------------------
-call <OK5TVR-15>
-lon <4947.18N> //For example: format 49°47,18'N whitout symbol
-
-4903.50N is 49 degrees 3 minutes 30 seconds north.
- In generic format examples, the latitude is shown as the 8-character string
- ddmm.hhN (i.e. degrees, minutes and hundredths of a minute north).
-
-lat <01317.10E> // For example: format 13°17,10'E whitout symbol
-
- 07201.75W is 72 degrees 1 minute 45 seconds west.
- In generic format examples, the longitude is shown as the 9-character string
- dddmm.hhW (i.e. degrees, minutes and hundredths of a minute west).
- 
+call <OK5TVR-17>
+lon <4947.18N>
+lat <01317.10E>
 sym <L>
-coment < RX_Igate_LoRA by OK5TVR>
+coment <RX_Igate_LoRA by OK5TVR>
 Alt <324.0>
-aprs_filter <>
+aprs_filter <10m>
 
 ///------------aprs setup----------------
 servername <czech.aprs2.net>
@@ -28,11 +18,15 @@ aprs_port <14580>
 password_aprs <xxxxx>
 
 ///---------------IP config---------------
-IP_manual <true> // false or true
+IP_manual <false>
 local_IP <192.168.1.189>
 gateway <192.168.1.1>
-
 subnet <255.255.255.0>
 primaryDNS <192.168.1.1>
 secondaryDNS <192.168.1.1>
+
+///----------digi------------
+digi <1>
+digi_AP <1>
+ap_password <mojeheslo123>
 !
