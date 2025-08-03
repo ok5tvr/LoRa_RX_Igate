@@ -159,7 +159,7 @@ h3 {font-size: 1rem;}
         <td>%lon% %lat%</td>
     </tr>
     <tr>
-        <td>Nadmořská výška:</td>
+        <td>Nadmorska vyska:</td>
         <td>%vys% m.n.m.</td>
     </tr>
 </table>
