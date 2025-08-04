@@ -3,30 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LoRa_RX_Igate Flasher</title>
+    <title>LoRa_RX_Igate Flasher (TTGO LoRa V1)</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <h1>LoRa_RX_Igate Flasher</h1>
-    <p>Select your board and connect your ESP32 via USB.</p>
+    <p>Connect your TTGO LoRa V1 via USB to flash the firmware.</p>
     
-    <!-- Výběr desky a flashování -->
     <div>
-        <label for="boardSelect">Board Type:</label>
-        <select id="boardSelect">
-            <option value="ttgo">TTGO LoRa32</option>
-        </select>
-        <button id="connectButton">Connect to ESP32</button>
+        <button id="connectButton">Connect to TTGO LoRa V1</button>
         <button id="flashButton" disabled>Flash Firmware</button>
+        <button id="flashWithConfig" disabled>Flash Firmware with Custom config.txt</button>
     </div>
     <p id="status">Status: Not connected</p>
 
-    <!-- Formulář pro config.txt -->
     <h2>Configuration File (config.txt)</h2>
+    <p>Customize the configuration below or use the default config.txt included in the firmware.</p>
     <form id="configForm">
         <h3>Wi-Fi Settings</h3>
         <label>Wi-Fi SSID: <input type="text" id="wifi_ssid" placeholder="e.g., Vlas_dolni_vlkys"></label><br>
-        <label>Wi-Fi Password: <input type="password" id="wifi_password" placeholder="e.g., xxxxxxxxxx"></label><br>
+        <label>Wi-Fi Password: <input type="password" id="wifi_password" placeholder="e.g., tomasV860309"></label><br>
 
         <h3>APRS Settings</h3>
         <label>Callsign: <input type="text" id="callsign" placeholder="e.g., OK5TVR-17"></label><br>
@@ -58,7 +54,7 @@
         <button type="button" id="saveConfig">Save config.txt</button>
     </form>
 
-    <script src="https://unpkg.com/esptool-js@0.2.0/dist/web/index.js"></script>
+    <script src="https://unpkg.com/esptool-js/lib/index.js"></script>
     <script src="main.js"></script>
 </body>
 </html>
