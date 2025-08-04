@@ -1,6 +1,6 @@
 # LoRa_RX_Igate Flasher
-This is the web-based flasher for the LoRa_RX_Igate project. It allows you to flash firmware to your ESP32 and generate a config.txt file for configuration.
-Access the flasher at: [https://ok5tvr.github.io/LoRa_RX_Igate/](https://ok5tvr.github.io/LoRa_RX_Igate/).
+This is the web-based flasher for the LoRa_RX_Igate project. It allows you to flash firmware to your ESP32.
+Access the flasher at: [https://ok5tvr.github.io/LoRa_RX_Igate/](__)__.
 # LoRa_RX_Igate Update 3.8.2025
 <img src="digi.png" alt="digi" align="right" width="360" style="margin-left: 20px; margin-bottom: 10px;">
 LoRa RX iGate/Digi is a program for ESP32-based devices that functions as a LoRa receiver, APRS iGate, or digipeater for radio communication in the 433 MHz band. It enables the reception and processing of APRS packets, forwarding them to an APRS-IS server (in iGate mode), relaying packets (in Digi mode), or operating as a Wi-Fi access point (AP mode). The program includes a web interface for displaying received data and configuring settings, an OLED display for showing information, and support for telemetry (e.g., CPU temperature, packet count). Version 2.1.11 adds the ability to edit the configuration via the web interface at /nastaveni (settings). Main Features:
