@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="cs">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,15 +8,58 @@
 </head>
 <body>
     <h1>LoRa_RX_Igate Flasher</h1>
-    <p>Vyberte desku a připojte ESP32 přes USB.</p>
-    <select id="boardSelect">
-        <option value="ttgo">TTGO LoRa32</option>
-        <option value="heltec">Heltec WiFi LoRa 32</option>
-        <option value="esp32">Generic ESP32</option>
-    </select>
-    <button id="connectButton">Připojit k ESP32</button>
-    <button id="flashButton" disabled>Nahrát firmware</button>
-    <p id="status">Stav: Nepřipojeno</p>
+    <p>Select your board and connect your ESP32 via USB.</p>
+    
+    <!-- Výběr desky a flashování -->
+    <div>
+        <label for="boardSelect">Board Type:</label>
+        <select id="boardSelect">
+            <option value="ttgo">TTGO LoRa32</option>
+            <option value="heltec">Heltec WiFi LoRa 32</option>
+            <option value="esp32">Generic ESP32</option>
+        </select>
+        <button id="connectButton">Connect to ESP32</button>
+        <button id="flashButton" disabled>Flash Firmware</button>
+    </div>
+    <p id="status">Status: Not connected</p>
+
+    <!-- Formulář pro config.txt -->
+    <h2>Configuration File (config.txt)</h2>
+    <form id="configForm">
+        <h3>Wi-Fi Settings</h3>
+        <label>Wi-Fi SSID: <input type="text" id="wifi_ssid" placeholder="e.g., Vlas_dolni_vlkys"></label><br>
+        <label>Wi-Fi Password: <input type="password" id="wifi_password" placeholder="e.g., tomasV860309"></label><br>
+
+        <h3>APRS Settings</h3>
+        <label>Callsign: <input type="text" id="callsign" placeholder="e.g., OK5TVR-17"></label><br>
+        <label>Latitude: <input type="text" id="latitude" placeholder="e.g., 4947.18N"></label><br>
+        <label>Longitude: <input type="text" id="longitude" placeholder="e.g., 01317.10E"></label><br>
+        <label>Symbol: <input type="text" id="symbol" placeholder="e.g., L"></label><br>
+        <label>Comment: <input type="text" id="comment" placeholder="e.g., RX_Igate_LoRA by OK5TVR"></label><br>
+        <label>Altitude (meters): <input type="text" id="altitude" placeholder="e.g., 324.0"></label><br>
+        <label>APRS Filter: <input type="text" id="aprs_filter" placeholder="e.g., 10m"></label><br>
+
+        <h3>APRS Server Settings</h3>
+        <label>Server Name: <input type="text" id="servername" placeholder="e.g., czech.aprs2.net"></label><br>
+        <label>Server Port: <input type="text" id="aprs_port" placeholder="e.g., 14580"></label><br>
+        <label>Server Password: <input type="password" id="password_aprs" placeholder="e.g., xxxxx"></label><br>
+
+        <h3>IP Configuration</h3>
+        <label>Use Manual IP: <input type="checkbox" id="ip_manual"></label><br>
+        <label>Local IP: <input type="text" id="local_ip" placeholder="e.g., 192.168.1.189"></label><br>
+        <label>Gateway: <input type="text" id="gateway" placeholder="e.g., 192.168.1.1"></label><br>
+        <label>Subnet: <input type="text" id="subnet" placeholder="e.g., 255.255.255.0"></label><br>
+        <label>Primary DNS: <input type="text" id="primary_dns" placeholder="e.g., 192.168.1.1"></label><br>
+        <label>Secondary DNS: <input type="text" id="secondary_dns" placeholder="e.g., 192.168.1.1"></label><br>
+
+        <h3>Digipeater Settings</h3>
+        <label>Enable Digi: <input type="checkbox" id="digi"></label><br>
+        <label>Enable Digi AP: <input type="checkbox" id="digi_ap"></label><br>
+        <label>AP Password: <input type="password" id="ap_password" placeholder="e.g., mojeheslo123"></label><br>
+
+        <button type="button" id="saveConfig">Save config.txt</button>
+    </form>
+
     <script src="https://unpkg.com/esptool-js@0.2.0/dist/web/index.js"></script>
     <script src="main.js"></script>
 </body>

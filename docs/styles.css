@@ -2,13 +2,38 @@ body {
     font-family: Arial, sans-serif;
     text-align: center;
     padding: 20px;
+    background-color: #f4f4f4;
 }
-button, select {
+h1, h2, h3 {
+    color: #333;
+}
+button, select, input {
     padding: 10px;
-    margin: 10px;
+    margin: 5px;
     font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+button {
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+}
+button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
 }
 #status {
     color: #333;
     font-weight: bold;
+    margin: 10px 0;
+}
+form {
+    max-width: 600px;
+    margin: 0 auto;
+    text-align: left;
+}
+label {
+    display: block;
+    margin: 10px 0;
 }
