@@ -471,7 +471,7 @@ String procesor(const String& var) {
 
 //-------- Funkce pro Wi-Fi a APRS --------
 void wifi() {
-  WiFi.setHostname("lora_RX_igate");
+  WiFi.setHostname("lora_RX_igate_");
   WiFi.hostname("lora_RX_igate");
   if (digi_AP == 1) {
     // Režim přístupového bodu (AP)
@@ -634,7 +634,7 @@ String upravDigipeaterPath(String paket, String digiCall) {
 }
 
 void posliBeacon() {
-  String beacon = call + ">APZ023:!" + lon + sym + lat + "&PHG01000 LoRa node " + (digi_AP == 1 ? "AP" : (digi_mode ? "DIGI" : "iGate"));
+  String beacon = call + ">APZ023:!" + lon + sym + lat + "&PHG01000 " + tool + " " + (digi_AP == 1 ? "AP" : (digi_mode ? "DIGI" : "iGate"));
   if (digi_mode == 1 || digi_AP == 1) {
     digitalWrite(PLED1, HIGH);
     LoRa.beginPacket();
