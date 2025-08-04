@@ -1,5 +1,5 @@
 const boardFirmware = {
-    ttgo: 'https://raw.githubusercontent.com/ok5tvr/LoRa_RX_Igate/main/binaries/firmware.bin'
+    ttgo: 'https://github.com/ok5tvr/LoRa_RX_Igate/blob/main/binaries/firmware.bin'
 };
 
 const connectButton = document.getElementById('connectButton');
