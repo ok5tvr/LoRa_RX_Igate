@@ -1,0 +1,15 @@
+{
+    "name": "LoRa_RX_Igate Firmware",
+    "version": "1.0.0",
+    "builds": [
+        {
+            "chipFamily": "ESP32",
+            "parts": [
+                {
+                    "path": "https://github.com/ok5tvr/LoRa_RX_Igate/raw/main/binaries/firmware.bin",
+                    "offset": 0
+                }
+            ]
+        }
+    ]
+}
