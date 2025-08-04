@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoRa_RX_Igate Flasher</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>LoRa_RX_Igate Flasher</h1>
+    <p>Vyberte desku a připojte ESP32 přes USB.</p>
+    <select id="boardSelect">
+        <option value="ttgo">TTGO LoRa32</option>
+        <option value="heltec">Heltec WiFi LoRa 32</option>
+        <option value="esp32">Generic ESP32</option>
+    </select>
+    <button id="connectButton">Připojit k ESP32</button>
+    <button id="flashButton" disabled>Nahrát firmware</button>
+    <p id="status">Stav: Nepřipojeno</p>
+    <script src="https://unpkg.com/esptool-js@0.2.0/dist/web/index.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
