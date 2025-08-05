@@ -14,6 +14,10 @@
 #include <AsyncElegantOTA.h>
 #include <SPIFFS.h>
 
+// Function prototypes
+double convertToDecimalDegrees_la(const String& gpsString);
+double convertToDecimalDegrees_lo(const String& gpsString);
+
 //-------- Definice LED --------
 const int PLED1 = 25; // Pin pro LED na Trackeru
 
@@ -60,6 +64,8 @@ char buffer_cas[BUFFER_SIZE][10];
 char buffer_vzdalenost[BUFFER_SIZE][10];
 char buffer_azimut[BUFFER_SIZE][10];
 char buffer_icona[BUFFER_SIZE][400];
+double buffer_lat[BUFFER_SIZE]; // Array for latitude
+double buffer_lon[BUFFER_SIZE]; // Array for longitude
 byte cnt = 0;
 
 //-------- Digi/iGate/AP ------------
@@ -143,8 +149,8 @@ h3 {font-size: 1rem;}
 .card {background-color: white; box-shadow: 2px 2px 12px 1px rgba(140,140,140,.5); text-align: center;}
 .cards {max-width: 700px; margin: 0 auto; display: grid; grid-gap: 2rem; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));}
 .button-container {position: absolute; top: 50%; right: 20px; transform: translateY(-50%); display: flex; gap: 10px;}
-.setup-button, .ota-button {padding: 12px 24px; background-color: #1b78e2; color: white; border: 2px solid white; border-radius: 10px; cursor: pointer; font-weight: bold; z-index: 1000; font-size: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.3); text-decoration: none;}
-.setup-button:hover, .ota-button:hover {background-color: #145ca1;}
+.setup-button, .ota-button, .map-button {padding: 12px 24px; background-color: #1b78e2; color: white; border: 2px solid white; border-radius: 10px; cursor: pointer; font-weight: bold; z-index: 1000; font-size: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.3); text-decoration: none;}
+.setup-button:hover, .ota-button:hover, .map-button:hover {background-color: #145ca1;}
 </style>
 </head><body>
 <div class="topnav">
@@ -152,6 +158,7 @@ h3 {font-size: 1rem;}
 <div class="button-container">
   <a href="/nastaveni"><button class="setup-button">Setup</button></a>
   <a href="/update"><button class="ota-button">OTA</button></a>
+  %MAP_BUTTON%
 </div>
 </div>
 </br>
@@ -382,6 +389,156 @@ button:hover {background-color: #145ca1;}
 </div>
 </body></html>
 )rawliteral";
+//-------- HTML for Map Page --------
+// HTML kód pro mapu s proměnnými v <script> před Leaflet
+const char map_html[] PROGMEM = R"rawliteral(
+<!DOCTYPE HTML><html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <title>LoRa RX iGate - Mapa</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+    var latitude = %LATITUDE11%;
+    var longitude = %LONGITUDE11%;
+    var callsign = "%CALLSIGN11%";
+  </script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+    }
+    h2 {
+      font-size: 1.8rem;
+      color: white;
+      text-align: center;
+      margin: 0;
+      padding: 15px 0;
+    }
+    .topnav {
+      overflow: visible;
+      background-color: #1b78e2;
+      position: relative;
+      padding: 15px 0;
+      min-height: 60px;
+    }
+    .button-container {
+      position: absolute;
+      top: 50%;
+      right: 20px;
+      transform: translateY(-50%);
+      display: flex;
+      gap: 10px;
+    }
+    .back-button {
+      padding: 12px 24px;
+      background-color: #1b78e2;
+      color: white;
+      border: 2px solid white;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      z-index: 1000;
+      font-size: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      text-decoration: none;
+    }
+    .back-button:hover {
+      background-color: #145ca1;
+    }
+  </style>
+</head>
+<body>
+  <div class="topnav">
+    <h2>LoRa RX iGate - Mapa Stanic</h2>
+    <div class="button-container">
+      <a href="/"><button class="back-button">Zpět na hlavní stránku</button></a>
+    </div>
+  </div>
+  <div id="map" style="height: calc(100vh - 90px); width: 100%; max-width: 1200px; margin: 20px auto;"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>
+    var map = L.map('map').setView([latitude, longitude], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    var redIcon = L.icon({
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+      shadowSize: [41, 41]
+    });
+    var marker = L.marker([latitude, longitude], {icon: redIcon}).addTo(map);
+    marker.bindPopup(
+      "<b>" + callsign11 + "</b><br>" +
+      "RSSI: -90 dBm<br>" +
+      "SNR: 10 dB<br>" +
+      "Vzdálenost: 0 km<br>" +
+      "Azimut: 0&deg;"
+    );
+  </script>
+</body>
+</html>
+)rawliteral";
+
+//----------pozice pro mapu---------
+double convertToDecimalDegreesLat(const String& lat) {
+  if (lat.length() < 6) return 50.0; // Výchozí hodnota při neplatném vstupu
+
+  // Extrakce stupňů (první 2 znaky) a minut (zbytek až před 'N'/'S')
+  String degStr = lat.substring(0, 2);
+  String minStr = lat.substring(2, lat.length() - 1);
+  char direction = lat[lat.length() - 1];
+
+  // Konverze na číselné hodnoty
+  double degrees = degStr.toInt();
+  double minutes = minStr.toFloat();
+  
+  // Kontrola platnosti
+  if (degrees < 0 || degrees > 90 || minutes < 0 || minutes >= 60 || (direction != 'N' && direction != 'S')) {
+    Serial.println("Neplatná zeměpisná šířka: " + lat + ", použita výchozí: 50.0");
+    return 50.0;
+  }
+
+  // Konverze na desetinné stupně
+  double decimal = degrees + (minutes / 60.0);
+  if (direction == 'S') {
+    decimal = -decimal;
+  }
+
+  return decimal;
+}
+
+double convertToDecimalDegreesLon(const String& lon) {
+  if (lon.length() < 7) return 14.0; // Výchozí hodnota při neplatném vstupu
+
+  // Extrakce stupňů (první 3 znaky) a minut (zbytek až před 'E'/'W')
+  String degStr = lon.substring(0, 3);
+  String minStr = lon.substring(3, lon.length() - 1);
+  char direction = lon[lon.length() - 1];
+
+  // Konverze na číselné hodnoty
+  double degrees = degStr.toInt();
+  double minutes = minStr.toFloat();
+  
+  // Kontrola platnosti
+  if (degrees < 0 || degrees > 180 || minutes < 0 || minutes >= 60 || (direction != 'E' && direction != 'W')) {
+    Serial.println("Neplatná zeměpisná délka: " + lon + ", použita výchozí: 14.0");
+    return 14.0;
+  }
+
+  // Konverze na desetinné stupně
+  double decimal = degrees + (minutes / 60.0);
+  if (direction == 'W') {
+    decimal = -decimal;
+  }
+
+  return decimal;
+}
 
 //-------- Funkce pro webový server --------
 void notFound(AsyncWebServerRequest *request) {
@@ -389,7 +546,7 @@ void notFound(AsyncWebServerRequest *request) {
 }
 
 String procesor(const String& var) {
-  // Proměnné pro hlavní stránku
+  // Existing placeholders (unchanged)
   if (var == "lat") return lat;
   if (var == "lon") return lon;
   if (var == "vys") return String(Alt);
@@ -440,7 +597,7 @@ String procesor(const String& var) {
   if (var == "URL1") return String(temp_cpu);
   if (var == "DATUM") return (digi_mode == 0 && digi_AP == 0) ? timeClient.getFormattedTime() : String(cas_new / 60) + "m";
   
-  // Proměnné pro stránku nastavení
+  // Settings page placeholders (unchanged)
   if (var == "SSID") return ssid;
   if (var == "PASSWORD") return password;
   if (var == "CALL") return call;
@@ -465,7 +622,27 @@ String procesor(const String& var) {
   if (var == "DIGI_AP_0") return (digi_AP == 0) ? "selected" : "";
   if (var == "DIGI_AP_1") return (digi_AP == 1) ? "selected" : "";
   if (var == "AP_PASSWORD") return ap_password;
-  
+  if (var == "MAP_BUTTON") {
+  if (digi_mode == 0 && digi_AP == 0) {
+      return "<a href=\"/map\"><button class=\"map-button\">Map</button></a>";
+    }
+    return "";
+  }
+if (var == "LATITUDE11") {
+    String lat_val = String(convertToDecimalDegreesLat(lon), 6);
+    Serial.println("LATITUDE: " + lat_val);
+   return lat_val;
+  }
+  if (var == "LONGITUDE11") {
+    String lon_val = String(convertToDecimalDegreesLon(lat), 6);
+    Serial.println("LONGITUDE: " + lon_val);
+    return lon_val;
+  }
+  if (var == "CALLSIGN11") {
+    String callsignww = call; // Nahraďte proměnnou, pokud je volací znak uložen jinde
+    Serial.println("CALLSIGN: " + callsignww);
+    return callsignww;
+  }
   return String();
 }
 
@@ -725,6 +902,20 @@ void setup() {
   Serial.begin(9600);
   delay(500);
 
+  // Initialize buffers
+  for (int i = 0; i < BUFFER_SIZE; i++) {
+    buffer[i][0] = '\0';
+    buffer_SN[i][0] = '\0';
+    buffer_RSSI[i][0] = '\0';
+    buffer_pak[i][0] = '\0';
+    buffer_cas[i][0] = '\0';
+    buffer_vzdalenost[i][0] = '\0';
+    buffer_azimut[i][0] = '\0';
+    buffer_icona[i][0] = '\0';
+    buffer_lat[i] = 0.0; // Initialize latitude
+    buffer_lon[i] = 0.0; // Initialize longitude
+  }
+
   //-------- SPIFFS --------
   if (!SPIFFS.begin(true)) {
     Serial.println("Chyba SPIFFS");
@@ -938,6 +1129,10 @@ void setup() {
       Serial.println("Client připojen k nastavení: " + request->client()->remoteIP().toString());
       request->send_P(200, "text/html", nastaveni_html, procesor);
     });
+   server.on("/map", HTTP_GET, [](AsyncWebServerRequest *request) {
+    Serial.println("Client connected to map: " + request->client()->remoteIP().toString());
+    request->send_P(200, "text/html", map_html, procesor);
+  });
     server.on("/nastaveni", HTTP_POST, [](AsyncWebServerRequest *request) {
       String newConfig = "";
       if (request->hasParam("ssid", true)) newConfig += "<" + request->getParam("ssid", true)->value() + ">";
@@ -1046,6 +1241,10 @@ void setup() {
   display.setCursor(40, 46);
   display.print(verze);
   display.display();
+
+  ///--oveření pozice---
+  Serial.println("Lat: " + String(convertToDecimalDegreesLat(lon), 6));
+  Serial.println("Lon: " + String(convertToDecimalDegreesLon(lat), 6));
 
   //---- Úvodní beacon
   posliBeacon();
@@ -1231,6 +1430,9 @@ void loop() {
           latitude2 = convertToDecimalDegrees_la(gpslan.c_str());
           longitude2 = convertToDecimalDegrees_lo(gpslon.c_str());
         }
+        // Store coordinates
+        buffer_lat[cnt] = latitude2;
+        buffer_lon[cnt] = longitude2;
       }
 
       double latitude1 = convertToDecimalDegrees_la(lon.c_str());

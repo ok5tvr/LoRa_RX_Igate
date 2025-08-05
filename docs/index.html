@@ -1,22 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="cs">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LoRa_RX_Igate Flasher (TTGO LoRa V1)</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <title>ESP32 Firmware Upload</title>
+  <script type="module" src="https://unpkg.com/esp-web-tools@10.1.1/dist/web/install-button.js?module"></script>
 </head>
 <body>
-    <h1>LoRa_RX_Igate Flasher</h1>
-    <p>Connect your TTGO LoRa V1 via USB to flash the firmware.</p>
-    
-    <div>
-        <esp-web-install-button
-            manifest="firmware-manifest.json">
-        </esp-web-install-button>
-    </div>
-    <p id="status">Status: Not connected</p>
+  <h1>LoRa iGate – Nahrání Firmware</h1>
 
-    <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+  <!-- Tlačítko pro nahrání -->
+  <esp-web-install-button manifest="manifest.json"></esp-web-install-button>
+
 </body>
 </html>
