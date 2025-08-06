@@ -1,3 +1,11 @@
+# Enhanced Map Display for LoRa RX iGate
+The LoRa RX iGate firmware has been updated (version 2.1.12) to include an enhanced map display feature. The map now shows the last five received stations from the buffers (buffer, buffer_lat, buffer_lon, buffer_RSSI, buffer_SN, buffer_vzdalenost, buffer_azimut) using blue markers, while the iGate itself (call, lat, lon) is displayed with a red marker. Key improvements include:
+
+Dynamic Station Data: Station data (callsign, RSSI, SNR, distance, azimuth) is defined in a <script> block before Leaflet initialization, ensuring compatibility with the procesor function without requiring JavaScript processing.
+Preserved Functionality: All existing features (LoRa, APRS, Wi-Fi, OLED, configuration via config.txt) remain unchanged, with the map accessible in iGate mode (digi_mode = 0, digi_AP = 0).
+
+This update improves the user interface and simplifies icon management while maintaining robust APRS and LoRa functionality. For details, see the updated map_html and procesor function in the source code.
+
 # LoRa_RX_Igate Flasher
 This is the web-based flasher for the LoRa_RX_Igate project. It allows you to flash firmware to your ESP32.
 Access the flasher at: [https://ok5tvr.github.io/LoRa_RX_Igate/](https://ok5tvr.github.io/LoRa_RX_Igate/).

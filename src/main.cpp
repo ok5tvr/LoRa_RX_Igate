@@ -28,7 +28,7 @@ String password = "tomasV860309";
 String ap_password = "mojeheslo123"; // Heslo pro AP
 
 //-------- Verze -----------------
-String verze = "2.1.11"; // Aktualizováno pro editaci config.txt
+String verze = "2.1.12"; // Aktualizováno pro editaci config.txt
 
 //-------- APRS ID ---------------
 String call = "OK5TVR-17";
@@ -390,20 +390,68 @@ button:hover {background-color: #145ca1;}
 </body></html>
 )rawliteral";
 //-------- HTML for Map Page --------
-// HTML kód pro mapu s proměnnými v <script> před Leaflet
+//-------- HTML for Map Page --------
 const char map_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html lang="cs">
 <head>
   <meta charset="UTF-8">
   <title>LoRa RX iGate - Mapa</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  
   <script>
-    var latitude = %LATITUDE11%;
-    var longitude = %LONGITUDE11%;
-    var callsign = "%CALLSIGN11%";
+    var latitude = %LATITUDE%;
+    var longitude = %LONGITUDE%;
+    var callsign = "%CALLSIGN%";
+    var stations = [
+      {
+        lat: %LATITUDE0%,
+        lon: %LONGITUDE0%,
+        callsign: "%CALLSIGN0%",
+        rssi: "%RSSI0%",
+        snr: "%SNR0%",
+        distance: "%DISTANCE0%",
+        azimuth: "%AZIMUTH0%"
+      },
+      {
+        lat: %LATITUDE1%,
+        lon: %LONGITUDE1%,
+        callsign: "%CALLSIGN1%",
+        rssi: "%RSSI1%",
+        snr: "%SNR1%",
+        distance: "%DISTANCE1%",
+        azimuth: "%AZIMUTH1%"
+      },
+      {
+        lat: %LATITUDE2%,
+        lon: %LONGITUDE2%,
+        callsign: "%CALLSIGN2%",
+        rssi: "%RSSI2%",
+        snr: "%SNR2%",
+        distance: "%DISTANCE2%",
+        azimuth: "%AZIMUTH2%"
+      },
+      {
+        lat: %LATITUDE3%,
+        lon: %LONGITUDE3%,
+        callsign: "%CALLSIGN3%",
+        rssi: "%RSSI3%",
+        snr: "%SNR3%",
+        distance: "%DISTANCE3%",
+        azimuth: "%AZIMUTH3%"
+      },
+      {
+        lat: %LATITUDE4%,
+        lon: %LONGITUDE4%,
+        callsign: "%CALLSIGN4%",
+        rssi: "%RSSI4%",
+        snr: "%SNR4%",
+        distance: "%DISTANCE4%",
+        azimuth: "%AZIMUTH4%"
+      }
+    ];
   </script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-    <style>
+  <style>
     body {
       margin: 0;
       font-family: Arial, sans-serif;
@@ -459,7 +507,7 @@ const char map_html[] PROGMEM = R"rawliteral(
   <div id="map" style="height: calc(100vh - 90px); width: 100%; max-width: 1200px; margin: 20px auto;"></div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script>
-    var map = L.map('map').setView([latitude, longitude], 12);
+    var map = L.map('map').setView([latitude, longitude], 10);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
@@ -474,12 +522,34 @@ const char map_html[] PROGMEM = R"rawliteral(
     });
     var marker = L.marker([latitude, longitude], {icon: redIcon}).addTo(map);
     marker.bindPopup(
-      "<b>" + callsign11 + "</b><br>" +
+      "<b>" + callsign + "</b><br>" +
       "RSSI: -90 dBm<br>" +
       "SNR: 10 dB<br>" +
       "Vzdálenost: 0 km<br>" +
       "Azimut: 0&deg;"
     );
+
+    var blueIcon = L.icon({
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+      shadowSize: [41, 41]
+    });
+
+    stations.forEach(function(station) {
+      if (station.lat !== 0 && station.lon !== 0 && station.callsign !== "") {
+        var stationMarker = L.marker([station.lat, station.lon], {icon: blueIcon}).addTo(map);
+        stationMarker.bindPopup(
+          "<b>" + station.callsign + "</b><br>" +
+          "RSSI: " + station.rssi + " dBm<br>" +
+          "SNR: " + station.snr + " dB<br>" +
+          "Vzdálenost: " + station.distance + " km<br>" +
+          "Azimut: " + station.azimuth + "&deg;"
+        );
+      }
+    });
   </script>
 </body>
 </html>
@@ -546,7 +616,7 @@ void notFound(AsyncWebServerRequest *request) {
 }
 
 String procesor(const String& var) {
-  // Existing placeholders (unchanged)
+  // Existing placeholders for index_html and nastaveni_html
   if (var == "lat") return lat;
   if (var == "lon") return lon;
   if (var == "vys") return String(Alt);
@@ -589,15 +659,10 @@ String procesor(const String& var) {
   if (var == "az2") return buffer_azimut[2];
   if (var == "az3") return buffer_azimut[3];
   if (var == "az4") return buffer_azimut[4];
-  if (var == "icona64_0") return buffer_icona[0];
-  if (var == "icona64_1") return buffer_icona[1];
-  if (var == "icona64_2") return buffer_icona[2];
-  if (var == "icona64_3") return buffer_icona[3];
-  if (var == "icona64_4") return buffer_icona[4];
   if (var == "URL1") return String(temp_cpu);
   if (var == "DATUM") return (digi_mode == 0 && digi_AP == 0) ? timeClient.getFormattedTime() : String(cas_new / 60) + "m";
   
-  // Settings page placeholders (unchanged)
+  // Settings page placeholders
   if (var == "SSID") return ssid;
   if (var == "PASSWORD") return password;
   if (var == "CALL") return call;
@@ -623,26 +688,74 @@ String procesor(const String& var) {
   if (var == "DIGI_AP_1") return (digi_AP == 1) ? "selected" : "";
   if (var == "AP_PASSWORD") return ap_password;
   if (var == "MAP_BUTTON") {
-  if (digi_mode == 0 && digi_AP == 0) {
+    if (digi_mode == 0 && digi_AP == 0) {
       return "<a href=\"/map\"><button class=\"map-button\">Map</button></a>";
     }
     return "";
   }
-if (var == "LATITUDE11") {
+
+  // Map page placeholders for iGate
+  if (var == "LATITUDE") {
     String lat_val = String(convertToDecimalDegreesLat(lon), 6);
     Serial.println("LATITUDE: " + lat_val);
-   return lat_val;
+    return lat_val;
   }
-  if (var == "LONGITUDE11") {
+  if (var == "LONGITUDE") {
     String lon_val = String(convertToDecimalDegreesLon(lat), 6);
     Serial.println("LONGITUDE: " + lon_val);
     return lon_val;
   }
-  if (var == "CALLSIGN11") {
-    String callsignww = call; // Nahraďte proměnnou, pokud je volací znak uložen jinde
-    Serial.println("CALLSIGN: " + callsignww);
-    return callsignww;
+  if (var == "CALLSIGN") {
+    Serial.println("CALLSIGN: " + call);
+    return call;
   }
+
+  // Map page placeholders for stations
+  if (var == "LATITUDE0") return String(buffer_lat[0], 6);
+  if (var == "LONGITUDE0") return String(buffer_lon[0], 6);
+  if (var == "CALLSIGN0") return String(buffer[0]);
+  if (var == "RSSI0") return String(buffer_RSSI[0]);
+  if (var == "SNR0") return String(buffer_SN[0]);
+  if (var == "DISTANCE0") return String(buffer_vzdalenost[0]);
+  if (var == "AZIMUTH0") return String(buffer_azimut[0]);
+  
+
+  if (var == "LATITUDE1") return String(buffer_lat[1], 6);
+  if (var == "LONGITUDE1") return String(buffer_lon[1], 6);
+  if (var == "CALLSIGN1") return String(buffer[1]);
+  if (var == "RSSI1") return String(buffer_RSSI[1]);
+  if (var == "SNR1") return String(buffer_SN[1]);
+  if (var == "DISTANCE1") return String(buffer_vzdalenost[1]);
+  if (var == "AZIMUTH1") return String(buffer_azimut[1]);
+  
+
+  if (var == "LATITUDE2") return String(buffer_lat[2], 6);
+  if (var == "LONGITUDE2") return String(buffer_lon[2], 6);
+  if (var == "CALLSIGN2") return String(buffer[2]);
+  if (var == "RSSI2") return String(buffer_RSSI[2]);
+  if (var == "SNR2") return String(buffer_SN[2]);
+  if (var == "DISTANCE2") return String(buffer_vzdalenost[2]);
+  if (var == "AZIMUTH2") return String(buffer_azimut[2]);
+  
+
+  if (var == "LATITUDE3") return String(buffer_lat[3], 6);
+  if (var == "LONGITUDE3") return String(buffer_lon[3], 6);
+  if (var == "CALLSIGN3") return String(buffer[3]);
+  if (var == "RSSI3") return String(buffer_RSSI[3]);
+  if (var == "SNR3") return String(buffer_SN[3]);
+  if (var == "DISTANCE3") return String(buffer_vzdalenost[3]);
+  if (var == "AZIMUTH3") return String(buffer_azimut[3]);
+  
+
+  if (var == "LATITUDE4") return String(buffer_lat[4], 6);
+  if (var == "LONGITUDE4") return String(buffer_lon[4], 6);
+  if (var == "CALLSIGN4") return String(buffer[4]);
+  if (var == "RSSI4") return String(buffer_RSSI[4]);
+  if (var == "SNR4") return String(buffer_SN[4]);
+  if (var == "DISTANCE4") return String(buffer_vzdalenost[4]);
+  if (var == "AZIMUTH4") return String(buffer_azimut[4]);
+  
+
   return String();
 }
 
