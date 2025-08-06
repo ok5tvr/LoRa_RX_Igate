@@ -526,7 +526,8 @@ const char map_html[] PROGMEM = R"rawliteral(
       "RSSI: -90 dBm<br>" +
       "SNR: 10 dB<br>" +
       "Vzdálenost: 0 km<br>" +
-      "Azimut: 0&deg;"
+      "Azimut: 0&deg;<br>" +
+      "<a href='https://aprs.fi/info/a/" + callsign + "' class='aprs-link' target='_blank'>View on aprs.fi</a>"
     );
 
     var blueIcon = L.icon({
@@ -546,7 +547,8 @@ const char map_html[] PROGMEM = R"rawliteral(
           "RSSI: " + station.rssi + " dBm<br>" +
           "SNR: " + station.snr + " dB<br>" +
           "Vzdálenost: " + station.distance + " km<br>" +
-          "Azimut: " + station.azimuth + "&deg;"
+          "Azimut: " + station.azimuth + "&deg;<br>"+
+          "<a href='https://aprs.fi/info/a/" + station.callsign + "' class='aprs-link' target='_blank'>View on aprs.fi</a>"
         );
       }
     });
@@ -659,6 +661,11 @@ String procesor(const String& var) {
   if (var == "az2") return buffer_azimut[2];
   if (var == "az3") return buffer_azimut[3];
   if (var == "az4") return buffer_azimut[4];
+  if (var == "icona64_0") return buffer_icona[0];
+  if (var == "icona64_1") return buffer_icona[1];
+  if (var == "icona64_2") return buffer_icona[2];
+  if (var == "icona64_3") return buffer_icona[3];
+  if (var == "icona64_4") return buffer_icona[4];
   if (var == "URL1") return String(temp_cpu);
   if (var == "DATUM") return (digi_mode == 0 && digi_AP == 0) ? timeClient.getFormattedTime() : String(cas_new / 60) + "m";
   
