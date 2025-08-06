@@ -550,6 +550,15 @@ const char map_html[] PROGMEM = R"rawliteral(
           "Azimut: " + station.azimuth + "&deg;<br>"+
           "<a href='https://aprs.fi/info/a/" + station.callsign + "' class='aprs-link' target='_blank'>View on aprs.fi</a>"
         );
+                // Add dashed line between iGate and station
+        var dashedLine = L.polyline(
+          [[latitude, longitude], [station.lat, station.lon]],
+          {
+            color: '#1b78e2',
+            weight: 2,
+            dashArray: '5, 10'
+          }
+        ).addTo(map);
       }
     });
   </script>
