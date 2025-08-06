@@ -501,7 +501,7 @@ const char map_html[] PROGMEM = R"rawliteral(
   <div class="topnav">
     <h2>LoRa RX iGate - Mapa Stanic</h2>
     <div class="button-container">
-      <a href="/"><button class="back-button">Zpět na hlavní stránku</button></a>
+      <a href="/"><button class="back-button">Back ... </button></a>
     </div>
   </div>
   <div id="map" style="height: calc(100vh - 90px); width: 100%; max-width: 1200px; margin: 20px auto;"></div>
