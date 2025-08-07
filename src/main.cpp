@@ -13,6 +13,9 @@
 #include <string>
 #include <AsyncElegantOTA.h>
 #include <SPIFFS.h>
+//----hesla--------
+String web_username = "admin"; // Výchozí uživatelské jméno
+String web_password = "admin"; // Výchozí heslo
 
 // Function prototypes
 double convertToDecimalDegrees_la(const String& gpsString);
@@ -28,7 +31,7 @@ String password = "tomasV860309";
 String ap_password = "mojeheslo123"; // Heslo pro AP
 
 //-------- Verze -----------------
-String verze = "2.1.12"; // Aktualizováno pro editaci config.txt
+String verze = "2.2.00"; // Aktualizováno pro editaci config.txt
 
 //-------- APRS ID ---------------
 String call = "OK5TVR-17";
@@ -87,6 +90,9 @@ const int lora_RST = 23;
 const int lora_DIO0 = 26;
 const int lora_DIO1 = 33;
 const int lora_DIO2 = 32;
+int spreading_factor = 12;
+long bandwidth = 125000;
+int coding_rate = 5;
 
 //-------- Čas a telemetrie ------
 long cas_new = 0;
@@ -104,7 +110,7 @@ double latitude2 = 0;
 double longitude2 = 0;
 
 //-------- Konfigurace -----------
-const int MAX_SETTINGS = 21; // Pro ap_password
+const int MAX_SETTINGS = 26; // Pro ap_password
 String fileContent = "";
 String nastaveni[MAX_SETTINGS];
 
@@ -384,6 +390,38 @@ button:hover {background-color: #145ca1;}
     <option value="1" %DIGI_AP_1%>1 (On)</option>
   </select><br>
   <label>AP Password:</label><input type="text" name="ap_password" value="%AP_PASSWORD%"><br>
+  <label>LoRa Spreading Factor:</label>
+    <select name='spreading_factor'>
+      <option value='6' %SPREADING_FACTOR_6%>6</option>
+      <option value='7' %SPREADING_FACTOR_7%>7</option>
+      <option value='8' %SPREADING_FACTOR_8%>8</option>
+      <option value='9' %SPREADING_FACTOR_9%>9</option>
+      <option value='10' %SPREADING_FACTOR_10%>10</option>
+      <option value='11' %SPREADING_FACTOR_11%>11</option>
+      <option value='12' %SPREADING_FACTOR_12%>12</option>
+    </select>
+    <label>LoRa Bandwidth (Hz):</label>
+    <select name='bandwidth'>
+      <option value='7800' %BANDWIDTH_7800%>7800</option>
+      <option value='10400' %BANDWIDTH_10400%>10400</option>
+      <option value='15600' %BANDWIDTH_15600%>15600</option>
+      <option value='20800' %BANDWIDTH_20800%>20800</option>
+      <option value='31250' %BANDWIDTH_31250%>31250</option>
+      <option value='41700' %BANDWIDTH_41700%>41700</option>
+      <option value='62500' %BANDWIDTH_62500%>62500</option>
+      <option value='125000' %BANDWIDTH_125000%>125000</option>
+      <option value='250000' %BANDWIDTH_250000%>250000</option>
+      <option value='500000' %BANDWIDTH_500000%>500000</option>
+    </select>
+    <label>LoRa Coding Rate:</label>
+    <select name='coding_rate'>
+      <option value='5' %CODING_RATE_5%>5</option>
+      <option value='6' %CODING_RATE_6%>6</option>
+      <option value='7' %CODING_RATE_7%>7</option>
+      <option value='8' %CODING_RATE_8%>8</option>
+    </select>
+    <label>Web Username:</label><input type='text' name='web_username' value='%WEB_USERNAME%'>
+    <label>Web Password:</label><input type='password' name='web_password' value='%WEB_PASSWORD%'>
   <button type="submit">Save and Restart</button>
 </form>
 </div>
@@ -703,6 +741,37 @@ String procesor(const String& var) {
   if (var == "DIGI_AP_0") return (digi_AP == 0) ? "selected" : "";
   if (var == "DIGI_AP_1") return (digi_AP == 1) ? "selected" : "";
   if (var == "AP_PASSWORD") return ap_password;
+  // Spreading Factor
+  if (var == "SPREADING_FACTOR_6") return spreading_factor == 6 ? "selected" : "";
+  if (var == "SPREADING_FACTOR_7") return spreading_factor == 7 ? "selected" : "";
+  if (var == "SPREADING_FACTOR_8") return spreading_factor == 8 ? "selected" : "";
+  if (var == "SPREADING_FACTOR_9") return spreading_factor == 9 ? "selected" : "";
+  if (var == "SPREADING_FACTOR_10") return spreading_factor == 10 ? "selected" : "";
+  if (var == "SPREADING_FACTOR_11") return spreading_factor == 11 ? "selected" : "";
+  if (var == "SPREADING_FACTOR_12") return spreading_factor == 12 ? "selected" : "";
+  
+  // Bandwidth
+  if (var == "BANDWIDTH_7800") return bandwidth == 7800 ? "selected" : "";
+  if (var == "BANDWIDTH_10400") return bandwidth == 10400 ? "selected" : "";
+  if (var == "BANDWIDTH_15600") return bandwidth == 15600 ? "selected" : "";
+  if (var == "BANDWIDTH_20800") return bandwidth == 20800 ? "selected" : "";
+  if (var == "BANDWIDTH_31250") return bandwidth == 31250 ? "selected" : "";
+  if (var == "BANDWIDTH_41700") return bandwidth == 41700 ? "selected" : "";
+  if (var == "BANDWIDTH_62500") return bandwidth == 62500 ? "selected" : "";
+  if (var == "BANDWIDTH_125000") return bandwidth == 125000 ? "selected" : "";
+  if (var == "BANDWIDTH_250000") return bandwidth == 250000 ? "selected" : "";
+  if (var == "BANDWIDTH_500000") return bandwidth == 500000 ? "selected" : "";
+  
+  // Coding Rate
+  if (var == "CODING_RATE_5") return coding_rate == 5 ? "selected" : "";
+  if (var == "CODING_RATE_6") return coding_rate == 6 ? "selected" : "";
+  if (var == "CODING_RATE_7") return coding_rate == 7 ? "selected" : "";
+  if (var == "CODING_RATE_8") return coding_rate == 8 ? "selected" : "";
+
+  // web autentification
+    if (var == "WEB_USERNAME") return web_username;
+    if (var == "WEB_PASSWORD") return web_password;
+  
   if (var == "MAP_BUTTON") {
     if (digi_mode == 0 && digi_AP == 0) {
       return "<a href=\"/map\"><button class=\"map-button\">Map</button></a>";
@@ -1139,12 +1208,28 @@ void setup() {
     if (nastaveni[18].length() > 0) digi_mode = nastaveni[18].toInt();
     if (nastaveni[19].length() > 0) digi_AP = nastaveni[19].toInt();
     if (nastaveni[20].length() > 0) ap_password = nastaveni[20];
+    if (nastaveni[21].length() > 0) spreading_factor = nastaveni[21].toInt();
+    if (nastaveni[22].length() > 0) bandwidth = nastaveni[22].toInt();
+    if (nastaveni[23].length() > 0) coding_rate = nastaveni[23].toInt();
+     if (nastaveni[24].length() > 0) web_username = nastaveni[24];
+    if (nastaveni[25].length() > 0) web_password = nastaveni[25];
+    
+    Serial.print("web_username: ");
+    Serial.println(web_username);
+    Serial.print("web_password: ");
+    Serial.println(web_password);
     Serial.print("digi_mode: ");
     Serial.println(digi_mode);
     Serial.print("digi_AP: ");
     Serial.println(digi_AP);
     Serial.print("ap_password: ");
     Serial.println(ap_password);
+    Serial.print("spreading_factor: ");
+    Serial.println(spreading_factor);
+    Serial.print("bandwidth: ");
+    Serial.println(bandwidth);
+    Serial.print("coding_rate: ");
+    Serial.println(coding_rate);
     user = call;
   } else {
     Serial.println("Soubor config.txt nelze přečíst, použity výchozí hodnoty.");
@@ -1183,6 +1268,9 @@ void setup() {
     });
     server.on("/nastaveni", HTTP_GET, [](AsyncWebServerRequest *request) {
       Serial.println("Client připojen k nastavení: " + request->client()->remoteIP().toString());
+       if (!request->authenticate(web_username.c_str(), web_password.c_str())) {
+      return request->requestAuthentication();
+    }
       request->send_P(200, "text/html", nastaveni_html, procesor);
     });
     server.on("/nastaveni", HTTP_POST, [](AsyncWebServerRequest *request) {
@@ -1229,6 +1317,16 @@ void setup() {
       else newConfig += "<>";
       if (request->hasParam("ap_password", true)) newConfig += "<" + request->getParam("ap_password", true)->value() + ">";
       else newConfig += "<>";
+           if (request->hasParam("spreading_factor", true)) newConfig += "<" + request->getParam("spreading_factor", true)->value() + ">";
+    else newConfig += "<12>";
+    if (request->hasParam("bandwidth", true)) newConfig += "<" + request->getParam("bandwidth", true)->value() + ">";
+    else newConfig += "<125000>";
+    if (request->hasParam("coding_rate", true)) newConfig += "<" + request->getParam("coding_rate", true)->value() + ">";
+    else newConfig += "<5>";
+    if (request->hasParam("web_username", true)) newConfig += "<" + request->getParam("web_username", true)->value() + ">";
+    else newConfig += "<admin>";
+    if (request->hasParam("web_password", true)) newConfig += "<" + request->getParam("web_password", true)->value() + ">";
+    else newConfig += "<admin>";
 
       File file = SPIFFS.open("/config.txt", FILE_WRITE);
       if (file) {
@@ -1256,6 +1354,9 @@ void setup() {
     });
     server.on("/nastaveni", HTTP_GET, [](AsyncWebServerRequest *request) {
       Serial.println("Client připojen k nastavení: " + request->client()->remoteIP().toString());
+       if (!request->authenticate(web_username.c_str(), web_password.c_str())) {
+      return request->requestAuthentication();
+    }
       request->send_P(200, "text/html", nastaveni_html, procesor);
     });
    server.on("/map", HTTP_GET, [](AsyncWebServerRequest *request) {
@@ -1306,6 +1407,16 @@ void setup() {
       else newConfig += "<>";
       if (request->hasParam("ap_password", true)) newConfig += "<" + request->getParam("ap_password", true)->value() + ">";
       else newConfig += "<>";
+         if (request->hasParam("spreading_factor", true)) newConfig += "<" + request->getParam("spreading_factor", true)->value() + ">";
+    else newConfig += "<12>";
+    if (request->hasParam("bandwidth", true)) newConfig += "<" + request->getParam("bandwidth", true)->value() + ">";
+    else newConfig += "<125000>";
+    if (request->hasParam("coding_rate", true)) newConfig += "<" + request->getParam("coding_rate", true)->value() + ">";
+    else newConfig += "<5>";
+      if (request->hasParam("web_username", true)) newConfig += "<" + request->getParam("web_username", true)->value() + ">";
+    else newConfig += "<admin>";
+    if (request->hasParam("web_password", true)) newConfig += "<" + request->getParam("web_password", true)->value() + ">";
+    else newConfig += "<admin>";
 
       File file = SPIFFS.open("/config.txt", FILE_WRITE);
       if (file) {
@@ -1343,9 +1454,9 @@ void setup() {
     Serial.println("Starting LoRa failed!");
     while (1);
   }
-  LoRa.setSpreadingFactor(12);
-  LoRa.setSignalBandwidth(125000);
-  LoRa.setCodingRate4(5);
+  LoRa.setSpreadingFactor(spreading_factor);
+  LoRa.setSignalBandwidth(bandwidth);
+  LoRa.setCodingRate4(coding_rate);
   LoRa.disableCrc();
   Serial.println("LoRa started successfully.");
 

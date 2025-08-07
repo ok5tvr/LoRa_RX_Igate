@@ -1,3 +1,33 @@
+# Version 2.2.00
+Overview
+Version 2.2.00 adds dynamic LoRa configuration and secures the web interface and OTA updates with user-defined credentials.
+Changes
+1. Dynamic LoRa Configuration
+
+Added web interface dropdowns for LoRa settings:
+
+Spreading Factor (6–12)
+Bandwidth (7800–500000 Hz)
+Coding Rate (5–8)
+
+
+Updated nastaveni_html, procesor, loadConfiguration, and server.on("/nastaveni", HTTP_POST, ...) to handle and store settings in config.txt.
+Modified setupLoRa to apply LoRa parameters dynamically.
+
+2. Web and OTA Authentication
+
+Added HTTP Basic Authentication for /nastaveni and /update endpoints.
+Included web_username and web_password fields in nastaveni_html and config.txt.
+Updated procesor, loadConfiguration, and setupWebServer to support authentication.
+Configured AsyncElegantOTA to require credentials for OTA updates.
+Ensured minimum 4-character password length (defaults to "admin").
+
+Notes
+
+Config File: config.txt now uses 26 parameters. Add <admin><admin> at the start for compatibility.
+Testing: Confirm LoRa settings apply correctly and authentication prompts appear for /nastaveni and /update.
+Security: Passwords are stored in plain text. Consider hashing for future enhancements.
+
 # Enhanced Map Display for LoRa RX iGate
 The LoRa RX iGate firmware has been updated (version 2.1.12) to include an enhanced map display feature. The map now shows the last five received stations from the buffers (buffer, buffer_lat, buffer_lon, buffer_RSSI, buffer_SN, buffer_vzdalenost, buffer_azimut) using blue markers, while the iGate itself (call, lat, lon) is displayed with a red marker. Key improvements include:
 

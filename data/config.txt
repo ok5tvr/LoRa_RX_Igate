@@ -30,5 +30,12 @@ digi <1>
 digi_AP <1>
 ap_password <mojeheslo123>
 
-///--------beacon-------------
+///---------lora------------
+spreading_factor <12>
+bandwidth <125000>
+coding_rate <5>
+
+///--------password web-------------
+web_username <admin>
+web_password <admin>
 !
