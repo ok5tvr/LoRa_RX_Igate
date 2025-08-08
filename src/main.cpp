@@ -70,6 +70,7 @@ char buffer_icona[BUFFER_SIZE][400];
 double buffer_lat[BUFFER_SIZE]; // Array for latitude
 double buffer_lon[BUFFER_SIZE]; // Array for longitude
 byte cnt = 0;
+int filled = 0; 
 
 //-------- Digi/iGate/AP ------------
 int digi_mode = 1;
@@ -108,6 +109,7 @@ long dx_dist = 0;
 float temp_cpu = 0;
 double latitude2 = 0;
 double longitude2 = 0;
+long buffer_age[BUFFER_SIZE]; // Array to track the age of each station
 
 //-------- Konfigurace -----------
 const int MAX_SETTINGS = 26; // Pro ap_password
@@ -140,6 +142,8 @@ String igate = "iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAYAAADEtGw7AAAAoElEQVRIib3VSw4E
 String air = "iVBORw0KGgoAAAANSUhEUgAAABcAAAAXCAIAAABvSEP3AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAFiUAABYlAUlSJPAAAABxSURBVDhP7c7RCoAgDIXhCB9demppKQdkHIeLFkJQfF00tp+2tKcgEWmVcpbHFlbykSsaan/F5lRwr9EC2BW6NOl9rtCqa0kFn3o4TvqQK6axQr5VQWIecio6AbQAswrdd7RWOf9y09uVoFapb/QRuQCUYKj+Z5tT/AAAAABJRU5ErkJggg==";
 
 String lgate = "iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAYAAADEtGw7AAAAn0lEQVRIib2V0Q6FIAxDK85k//+1JmjufTIhuI2i4J7bQxlbWCTJDxNKAGA/9qFQFUUaSiyKBqsoVHQsuASy8CbYAjHwEKyiyGdGPnM33AUzqSKNCe55JE97A/dAI09qCZ7Cv1mQN6tde2+Jn8Atj3jCumf1LG/rFgZxe8wkjzRm4tJ4Jes9uDkVFoC5DTVuJYh93LAVHpypaQuyzPpM/6BgO2Ce0xXHAAAAAElFTkSuQmCC";
+
+String nahrada = "iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAYAAADEtGw7AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsIAAA7CARUoSoAAAAGHaVRYdFhNTDpjb20uYWRvYmUueG1wAAAAAAA8P3hwYWNrZXQgYmVnaW49J++7vycgaWQ9J1c1TTBNcENlaGlIenJlU3pOVGN6a2M5ZCc/Pg0KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyI+PHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj48cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0idXVpZDpmYWY1YmRkNS1iYTNkLTExZGEtYWQzMS1kMzNkNzUxODJmMWIiIHhtbG5zOnRpZmY9Imh0dHA6Ly9ucy5hZG9iZS5jb20vdGlmZi8xLjAvIj48dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPjwvcmRmOkRlc2NyaXB0aW9uPjwvcmRmOlJERj48L3g6eG1wbWV0YT4NCjw/eHBhY2tldCBlbmQ9J3cnPz4slJgLAAABJElEQVRIS9WVMW6DQBBF/y5T+AIcI67pKLnBKj4Lso+A6DF7Dy5A3BLfgZbWBeSnCQivwWAlVpInjYRmmL+j3dGMEi3EE1CihZf24vq/xUY20K7zp/gd4fP7GYf9AduXLUQLRAt2rzuc3k7ur7eIFrYf7WBjjDEEMGllWZLkVW5vooV3Kw6CAGVZgiRIoqoq+L4PAEjTFADgKQ+e8pzMhYqnyPOcAGiMcUPzFU+e7FAUBQAgiiI3dJ0/rniJOI4JgGEYsmkaN0x+VS1aOAgvsUaUjwonSbJKlI8K923Xt9g9Jh9vibquXdcswxBa0xFr6Nj9gSFkrYVSCtZaNzTLqqtQSg3f5Pxe6NgB7jzu2M1adswAANkxu4mNbcz/2yBKnrRMPwEr2hxmQbuRDwAAAABJRU5ErkJggg==";
 
 //-------- HTML for Main Page --------
 const char index_html[] PROGMEM = R"rawliteral(
@@ -543,6 +547,16 @@ const char map_html[] PROGMEM = R"rawliteral(
     </div>
   </div>
   <div id="map" style="height: calc(100vh - 90px); width: 100%; max-width: 1200px; margin: 20px auto;"></div>
+  <div style="
+  position:absolute; right:12px; bottom:12px;
+  background:#fff; padding:8px 10px; border-radius:8px;
+  box-shadow:0 2px 6px rgba(0,0,0,.2); font-size:.9rem; line-height:1.4;">
+  <b>RSSI (barva linky)</b><br>
+  <span style="color:#2ecc71;">●</span> ≥ −60 dBm&nbsp;&nbsp;
+  <span style="color:#f1c40f;">●</span> −61 až −80 dBm<br>
+  <span style="color:#e67e22;">●</span> −81 až −95 dBm&nbsp;&nbsp;
+  <span style="color:#e74c3c;">●</span> &lt; −95 dBm
+</div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script>
     var map = L.map('map').setView([latitude, longitude], 10);
@@ -576,6 +590,15 @@ const char map_html[] PROGMEM = R"rawliteral(
       shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
       shadowSize: [41, 41]
     });
+ 
+    function rssiColor(rssiStr){
+    var r = parseFloat(rssiStr);
+    if (isNaN(r)) return '#888';     // fallback
+    if (r >= -60) return '#2ecc71';  // silný signál
+    if (r >= -80) return '#f1c40f';  // střední
+    if (r >= -95) return '#e67e22';  // slabší
+    return '#e74c3c';                // velmi slabý
+  }
 
     stations.forEach(function(station) {
       if (station.lat !== 0 && station.lon !== 0 && station.callsign !== "") {
@@ -589,14 +612,11 @@ const char map_html[] PROGMEM = R"rawliteral(
           "<a href='https://aprs.fi/info/a/" + station.callsign + "' class='aprs-link' target='_blank'>View on aprs.fi</a>"
         );
                 // Add dashed line between iGate and station
-        var dashedLine = L.polyline(
-          [[latitude, longitude], [station.lat, station.lon]],
-          {
-            color: '#1b78e2',
-            weight: 2,
-            dashArray: '5, 10'
-          }
-        ).addTo(map);
+ var col = rssiColor(station.rssi);
+    L.polyline(
+      [[latitude, longitude], [station.lat, station.lon]],
+      { color: col, weight: 3, opacity: 0.85, dashArray: "4,6" }
+    ).addTo(map);
       }
     });
   </script>
@@ -1082,6 +1102,29 @@ bool isASCII(const String& str) {
   return true;
 }
 
+//--------intex call-------------
+int pickIndexFor(const String& call_d) {
+  for (int i = 0; i < BUFFER_SIZE; i++) {
+    if (buffer[i][0] != '\0' && strcmp(buffer[i], call_d.c_str()) == 0) {
+      return i; // existující stanice
+    }
+  }
+  for (int i = 0; i < BUFFER_SIZE; i++) {
+    if (buffer[i][0] == '\0') {
+      return i; // volný slot
+    }
+  }
+  int oldestIndex = 0;
+  long oldestAge = buffer_age[0];
+  for (int i = 1; i < BUFFER_SIZE; i++) {
+    if (buffer_age[i] < oldestAge) {
+      oldestAge = buffer_age[i];
+      oldestIndex = i;
+    }
+  }
+  return oldestIndex; // nejstarší záznam
+}
+
 //-------- Interní teplota --------
 #ifdef __cplusplus
 extern "C" {
@@ -1261,7 +1304,7 @@ void setup() {
   //-------- Inicializace podle režimu --------
   if (digi_AP == 1) {
     wifi();
-    AsyncElegantOTA.begin(&server);
+    AsyncElegantOTA.begin(&server,web_username.c_str(), web_password.c_str());
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
       Serial.println("Client připojen: " + request->client()->remoteIP().toString());
       request->send_P(200, "text/html", index_html, procesor);
@@ -1491,13 +1534,9 @@ void setup() {
 }
 
 void loop() {
-  String paket = "";
-  String gpslan = "";
-  String gpslon = "";
-  String icona = "";
-
-  //-------- Aktualizace času --------
+  // -- aktualizace času (sekundy)
   unsigned long currentTime = millis() / 1000;
+
   if (digi_mode == 0 && digi_AP == 0) {
     timeClient.update();
     cas_new = timeClient.getEpochTime();
@@ -1506,25 +1545,24 @@ void loop() {
   }
   cas_dif = cas_new - cas_old;
 
-  //-------- Kontrola Wi-Fi --------
+  // -- kontrola Wi-Fi v iGate módu
   if (digi_mode == 0 && digi_AP == 0 && WiFi.status() != WL_CONNECTED) {
     Serial.println("WiFi no connect...");
     wifi();
   }
 
-  //-------- Reset po 2 hodinách --------
+  // -- watchdog/restart po 2h
   if (cas_new - cas_reset > 7200) {
     esp_restart();
   }
 
-  //-------- Telemetrie --------
+  // -- telemetrie každých 900 s
   if (cas_new - cas_telemetry > 900) {
     temp_cpu = (temprature_sens_read() - 32) / 1.8;
-    Serial.print("Teplota int: ");
-    Serial.println(temp_cpu);
+
     live_s = "";
     if (live < 100) live_s += "0";
-    if (live < 10) live_s += "0";
+    if (live < 10)  live_s += "0";
     live_s += live;
 
     if (digi_mode == 0 && digi_AP == 0) {
@@ -1532,7 +1570,7 @@ void loop() {
         client.println(call + ">APZ023,TCPIP*:T#" + live_s + "," + rx_cnt + "," + rf_inet + "," + dx_dist + "," + live + "," + temp_cpu + ",00000000");
         client.flush();
       } else {
-        Serial.println("Spojení s APRS serverem bylo přerušeno");
+        Serial.println("Connection to APRS server lost");
         client.stop();
         con_aprs();
       }
@@ -1543,199 +1581,211 @@ void loop() {
       LoRa.print(telemetry);
       LoRa.endPacket();
       digitalWrite(PLED1, LOW);
-      Serial.println("telemetrie vyslána přes RF: " + telemetry);
+      Serial.println("Telemetry sent via RF: " + telemetry);
     }
 
     live++;
-    rx_cnt = 0;
-    rf_inet = 0;
-    dx_dist = 0;
+    rx_cnt   = 0;
+    rf_inet  = 0;
+    dx_dist  = 0;
     if (live >= 96) live = 0;
     cas_telemetry = cas_new;
   }
 
-  //-------- Odeslání beaconu --------
+  // -- beacon každých 1200 s
   if (cas_new - cas_old > 1200) {
     posliBeacon();
     cas_old = cas_new;
   }
 
-  //-------- Zpracování LoRa paketu --------
+  // -- příjem LoRa
   int packetSize = LoRa.parsePacket();
   if (packetSize) {
+    String packet;
+    while (LoRa.available()) packet += (char)LoRa.read();
+
     Serial.print("Received packet: ");
-    while (LoRa.available()) {
-      paket += (char)LoRa.read();
-    }
-    Serial.println(paket);
+    Serial.println(packet);
     Serial.print(" with RSSI ");
     Serial.println(LoRa.packetRssi());
-    Serial.print(" with SN ");
+    Serial.print(" with SNR ");
     Serial.println(LoRa.packetSnr());
 
-    // Ořezání nežádoucích znaků před prvním písmenem
+    // Odřízni neabecední prefix
     int firstLetterIndex = -1;
-    for (int i = 0; i < paket.length(); i++) {
-      if (isAlpha(paket.charAt(i))) {
-        firstLetterIndex = i;
-        break;
-      }
+    for (int i = 0; i < packet.length(); i++) {
+      if (isAlpha(packet.charAt(i))) { firstLetterIndex = i; break; }
     }
     if (firstLetterIndex != -1) {
-      paket = paket.substring(firstLetterIndex);
-      Serial.print("Očištěný paket: ");
-      Serial.println(paket);
+      packet = packet.substring(firstLetterIndex);
+      Serial.print("Cleaned packet: ");
+      Serial.println(packet);
     } else {
-      Serial.println("Žádné písmeno nenalezeno, paket ignorován.");
+      Serial.println("No letter found, packet ignored.");
       rx_cnt++;
-      goto jump;
+      return;
     }
 
-    if (!isASCII(paket)) {
-      Serial.println("Řetězec obsahuje znaky mimo rozsah ASCII tabulky.");
+    // ASCII kontrola
+    if (!isASCII(packet)) {
+      Serial.println("Packet contains non-ASCII characters.");
       rx_cnt++;
-      goto jump;
+      return;
     }
     rx_cnt++;
 
+    // iGate upload (qAS), nebo digi RF forward
     if (digi_mode == 0 && digi_AP == 0) {
-      paket.trim();
-      int colonIndex = paket.indexOf(":");
+      String toSend = packet;
+      toSend.trim();
+      int colonIndex = toSend.indexOf(":");
       if (colonIndex >= 0) {
-        paket = paket.substring(0, colonIndex) + ",qAS," + call + paket.substring(colonIndex) + "\n";
-        
+        toSend = toSend.substring(0, colonIndex) + ",qAS," + call + toSend.substring(colonIndex) + "\n";
       }
       if (client.connected()) {
-        Serial.println("odesilam paket igate--> " +paket);
+        Serial.println("Sending packet to iGate: " + toSend);
         client.println("");
-        client.println(paket);
+        client.println(toSend);
         client.flush();
         rf_inet++;
-        //while (client.available()) {
-         // String response = client.readStringUntil('\n');
-          //Serial.println("Odpověď od APRS serveru: " + response);
-       // }
       } else {
-        Serial.println("Spojení s APRS serverem bylo přerušeno");
+        Serial.println("Connection to APRS server lost");
         client.stop();
         con_aprs();
       }
     } else {
-      if (!uzJsemDigipeatoval(paket, call)) {
-        String upravenyPaket = upravDigipeaterPath(paket, call);
+      if (!uzJsemDigipeatoval(packet, call)) {
+        String modifiedPacket = upravDigipeaterPath(packet, call);
         digitalWrite(PLED1, HIGH);
         LoRa.beginPacket();
-        LoRa.print("<" + String((char)0xFF) + String((char)0x01) + upravenyPaket);
+        LoRa.print("<" + String((char)0xFF) + String((char)0x01) + modifiedPacket);
         LoRa.endPacket();
         digitalWrite(PLED1, LOW);
-        Serial.println("Paket přeposlán přes RF: <" + String((char)0xFF) + String((char)0x01) + upravenyPaket);
+        Serial.println("Packet forwarded via RF: <" + String((char)0xFF) + String((char)0x01) + modifiedPacket);
       } else {
-        Serial.println("Paket již byl digipeatován, ignoruji.");
+        Serial.println("Packet already digipeated, ignoring.");
       }
     }
 
-    int pos = paket.indexOf(">");
-    if (pos != -1) {
-      String call_d = paket.substring(0, pos);
-      strcpy(buffer[cnt], call_d.c_str());
-      strcpy(buffer_pak[cnt], paket.c_str());
-      if (digi_mode == 0 && digi_AP == 0) {
-        strcpy(buffer_cas[cnt], timeClient.getFormattedTime().c_str());
+    // --- rozbor packetu a zápis do bufferu 5 unikátních stanic ---
+    int posGt = packet.indexOf(">");
+    if (posGt == -1) return;
+
+    String call_d = packet.substring(0, posGt);
+    int idx = pickIndexFor(call_d);   // <<< klíčová volba slotu
+
+    // Čas do slotu
+    if (digi_mode == 0 && digi_AP == 0) {
+      String t = timeClient.getFormattedTime();
+      snprintf(buffer_cas[idx], sizeof(buffer_cas[idx]), "%s", t.c_str());
+    } else {
+      snprintf(buffer_cas[idx], sizeof(buffer_cas[idx]), "%ldm", currentTime / 60);
+    }
+
+    // RSSI / SNR
+    char buf_rssi[10], buf_snr[10];
+    dtostrf(LoRa.packetRssi(), 1, 1, buf_rssi);
+    dtostrf(LoRa.packetSnr(), 1, 1, buf_snr);
+
+    snprintf(buffer[idx],          sizeof(buffer[idx]),          "%s", call_d.c_str());
+    snprintf(buffer_RSSI[idx],     sizeof(buffer_RSSI[idx]),     "%s", buf_rssi);
+    snprintf(buffer_SN[idx],       sizeof(buffer_SN[idx]),       "%s", buf_snr);
+    snprintf(buffer_pak[idx],      sizeof(buffer_pak[idx]),      "%s", packet.c_str());
+
+    // Pozice stanice z packetu (jen pokud nejde o '@' timestamp)
+    latitude2 = 0; longitude2 = 0;
+    int startIndex = packet.indexOf(':');
+    if (startIndex != -1 && packet.indexOf('@') == -1 && startIndex + 2 < packet.length()) {
+      String icon;
+      // Komprimovaná vs. nekomprimovaná pozice
+      if ((packet.substring(startIndex + 2, startIndex + 3) == "/") || (packet.substring(startIndex + 2, startIndex + 3) == "\\")) {
+        // komprese
+        icon = packet.substring(startIndex + 2, startIndex + 3) + packet.substring(startIndex + 11, startIndex + 12);
+        String k_lat = packet.substring(startIndex + 3, startIndex + 7);
+        String k_lon = packet.substring(startIndex + 7, startIndex + 11);
+        latitude2  =  90.0 - ((((((k_lat.charAt(0) - 33) * 91.0) + (k_lat.charAt(1) - 33)) * 91.0) + (k_lat.charAt(2) - 33)) * 91.0 + (k_lat.charAt(3) - 33)) / 380926.0;
+        longitude2 = -180.0 + ((((((k_lon.charAt(0) - 33) * 91.0) + (k_lon.charAt(1) - 33)) * 91.0) + (k_lon.charAt(2) - 33)) * 91.0 + (k_lon.charAt(3) - 33)) / 190463.0;
       } else {
-        char time_str[10];
-        snprintf(time_str, sizeof(time_str), "%ldm", currentTime / 60);
-        strcpy(buffer_cas[cnt], time_str);
-      }
-
-      char buffer_RSSIa[10];
-      dtostrf(LoRa.packetRssi(), 1, 1, buffer_RSSIa);
-      char buffer_SNa[10];
-      dtostrf(LoRa.packetSnr(), 1, 1, buffer_SNa);
-      strcpy(buffer_RSSI[cnt], buffer_RSSIa);
-      strcpy(buffer_SN[cnt], buffer_SNa);
-
-      int startIndex = paket.indexOf(':');
-      if (paket.indexOf('@') == -1) {
-        if ((paket.substring(startIndex + 2, startIndex + 3) == "/") || (paket.substring(startIndex + 2, startIndex + 3) == "\\")) {
-          Serial.println("Komprese pozice");
-          icona = paket.substring(startIndex + 2, startIndex + 3) + paket.substring(startIndex + 11, startIndex + 12);
-          String k_lan = paket.substring(startIndex + 3, startIndex + 7);
-          String k_lon = paket.substring(startIndex + 7, startIndex + 11);
-          latitude2 = 90.0 - ((((((k_lan.charAt(0) - 33) * 91.0) + (k_lan.charAt(1) - 33)) * 91.0) + (k_lan.charAt(2) - 33)) * 91.0 + (k_lan.charAt(3) - 33)) / 380926.0;
-          longitude2 = -180.0 + ((((((k_lon.charAt(0) - 33) * 91.0) + (k_lon.charAt(1) - 33)) * 91.0) + (k_lon.charAt(2) - 33)) * 91.0 + (k_lon.charAt(3) - 33)) / 190463.0;
-        } else {
-          gpslan = paket.substring(startIndex + 2, startIndex + 9);
-          gpslon = paket.substring(startIndex + 11, startIndex + 19);
-          icona = paket.substring(startIndex + 10, startIndex + 11) + paket.substring(startIndex + 20, startIndex + 21);
-          latitude2 = convertToDecimalDegrees_la(gpslan.c_str());
-          longitude2 = convertToDecimalDegrees_lo(gpslon.c_str());
+        // nekomprimovaná
+        if (startIndex + 21 < packet.length()) {
+          String gpsLat = packet.substring(startIndex + 2,  startIndex + 9);
+          String gpsLon = packet.substring(startIndex + 11, startIndex + 19);
+          icon = packet.substring(startIndex + 10, startIndex + 11) + packet.substring(startIndex + 20, startIndex + 21);
+          latitude2  = convertToDecimalDegrees_la(gpsLat.c_str());
+          longitude2 = convertToDecimalDegrees_lo(gpsLon.c_str());
         }
-        // Store coordinates
-        buffer_lat[cnt] = latitude2;
-        buffer_lon[cnt] = longitude2;
       }
 
-      double latitude1 = convertToDecimalDegrees_la(lon.c_str());
+      // Ulož souřadnice do bufferu (i když jsou 0 – mapový kód si to ohlídá)
+      buffer_lat[idx] = latitude2;
+      buffer_lon[idx] = longitude2;
+
+      // Výpočet vzdálenosti/azimutu (POZOR: proměnné lat/lon jsou ve tvém kódu "prohozené" podle názvu – zachovávám původní vzorec)
+      double latitude1  = convertToDecimalDegrees_la(lon.c_str());
       double longitude1 = convertToDecimalDegrees_lo(lat.c_str());
-      double distance = calculateDistance(latitude1, longitude1, latitude2, longitude2);
-      double azimuth = calculateAzimuth(latitude1, longitude1, latitude2, longitude2);
-      char buffer_vzdalenosta[10];
-      dtostrf(distance, 1, 2, buffer_vzdalenosta);
+      double distance   = calculateDistance(latitude1, longitude1, latitude2, longitude2);
+      double azimuth    = calculateAzimuth(latitude1, longitude1, latitude2, longitude2);
+
+      char buf_dist[10], buf_az[10];
+      dtostrf(distance, 1, 2, buf_dist);
+      dtostrf(azimuth,  1, 1, buf_az);
+
+      snprintf(buffer_vzdalenost[idx], sizeof(buffer_vzdalenost[idx]), "%s", buf_dist);
+      snprintf(buffer_azimut[idx],     sizeof(buffer_azimut[idx]),     "%s", buf_az);
+
       if (distance > dx_dist) {
         dx_dist = round(distance);
         if (dx_dist > 2000) dx_dist = 0;
       }
-      char buffer_azimuta[10];
-      dtostrf(azimuth, 1, 1, buffer_azimuta);
-      strcpy(buffer_vzdalenost[cnt], buffer_vzdalenosta);
-      strcpy(buffer_azimut[cnt], buffer_azimuta);
 
-      if (icona == "/#") strcpy(buffer_icona[cnt], digi.c_str());
-      else if (icona == "R#") strcpy(buffer_icona[cnt], digi.c_str());
-      else if (icona == "/r") strcpy(buffer_icona[cnt], digi.c_str());
-      else if (icona == "1#") strcpy(buffer_icona[cnt], digi.c_str());
-      else if (icona == "/>") strcpy(buffer_icona[cnt], car.c_str());
-      else if (icona == "L&") strcpy(buffer_icona[cnt], lgate.c_str());
-      else if (icona == "I&") strcpy(buffer_icona[cnt], igate.c_str());
-      else if (icona == "/_") strcpy(buffer_icona[cnt], wx.c_str());
-      else if (icona == "/[") strcpy(buffer_icona[cnt], chodec.c_str());
-      else if (icona == "//") strcpy(buffer_icona[cnt], red_dot.c_str());
-      else if (icona == "/a") strcpy(buffer_icona[cnt], sanita.c_str());
-      else if (icona == "/b") strcpy(buffer_icona[cnt], kolo.c_str());
-      else if (icona == "/'") strcpy(buffer_icona[cnt], air.c_str());
-
-      lastStation = call_d;
-      cas_reset = cas_new;
-      cnt++;
-      if (cnt == BUFFER_SIZE) cnt = 0;
-
-      display.clearDisplay();
-      display.setTextColor(WHITE);
-      display.setTextSize(1);
-      display.setCursor(0, 0);
-      display.print(call);
-      display.setCursor(70, 0);
-      display.print(digi_AP == 1 ? "AP+DIGI" : (digi_mode ? "DIGI" : "iGate"));
-      if (digi_mode == 0 || digi_AP == 1) {
-        display.setCursor(2, 9);
-        display.print(IP);
-      }
-      for (int i = 0; i < BUFFER_SIZE; i++) {
-        int y = 18 + (i * 9);
-        display.setCursor(2, y);
-        display.print(buffer[i]);
-        display.setCursor(60, y);
-        display.print(buffer_RSSI[i]);
-        display.setCursor(95, y);
-        display.print(buffer_SN[i]);
-      }
-      display.setCursor(0, (digi_mode == 1 && digi_AP == 0) ? 9 : 54);
-      display.print("Ver: ");
-      display.setCursor(40, (digi_mode == 1 && digi_AP == 0) ? 9 : 54);
-      display.print(verze);
-      display.display();
+      // Výběr ikony
+      if      (icon == "/#") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", digi.c_str());
+      else if (icon == "R#") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", digi.c_str());
+      else if (icon == "/r") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", digi.c_str());
+      else if (icon == "1#") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", digi.c_str());
+      else if (icon == "/>") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", car.c_str());
+      else if (icon == "\\>") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", car.c_str());
+      else if (icon == "L&") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", lgate.c_str());
+      else if (icon == "I&") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", igate.c_str());
+      else if (icon == "/_") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", wx.c_str());
+      else if (icon == "/[") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", chodec.c_str());
+      else if (icon == "//") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", red_dot.c_str());
+      else if (icon == "/a") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", sanita.c_str());
+      else if (icon == "/b") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", kolo.c_str());
+      else if (icon == "/'") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", air.c_str());
+      else {snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", nahrada.c_str());}
     }
+
+    // věk záznamu
+    buffer_age[idx] = cas_new;
+    lastStation = call_d;
+    cas_reset   = cas_new;
+
+    // OLED refresh (seznam 5 položek)
+    display.clearDisplay();
+    display.setTextColor(WHITE);
+    display.setTextSize(1);
+    display.setCursor(0, 0);
+    display.print(call);
+    display.setCursor(70, 0);
+    display.print(digi_AP == 1 ? "AP+DIGI" : (digi_mode ? "DIGI" : "iGate"));
+    if (digi_mode == 0 || digi_AP == 1) {
+      display.setCursor(2, 9);
+      display.print(IP);
+    }
+    for (int i = 0; i < BUFFER_SIZE; i++) {
+      int y = 18 + (i * 9);
+      display.setCursor(2,  y);
+      display.print(buffer[i]);
+      display.setCursor(60, y);
+      display.print(buffer_RSSI[i]);
+      display.setCursor(95, y);
+      display.print(buffer_SN[i]);
+    }
+    display.setCursor(0, (digi_mode == 1 && digi_AP == 0) ? 9 : 54);
+    display.print("Ver: ");
+    display.setCursor(40, (digi_mode == 1 && digi_AP == 0) ? 9 : 54);
+    display.print(verze);
+    display.display();
   }
-jump:
-  ;
 }
