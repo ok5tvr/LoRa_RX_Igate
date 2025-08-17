@@ -13,6 +13,8 @@
 #include <string>
 #include <AsyncElegantOTA.h>
 #include <SPIFFS.h>
+#include "board_pins.h"
+
 //----hesla--------
 String web_username = "admin"; // Výchozí uživatelské jméno
 String web_password = "admin"; // Výchozí heslo
@@ -78,19 +80,45 @@ int digi_AP = 0;
 String lastStation = "";
 
 //-------- OLED Display -----------
-#define OLED_SDA 21
-#define OLED_SCL 22
-#define OLED_RST 16
+#ifndef OLED_SDA
+  #define OLED_SDA 21
+#endif
+#ifndef OLED_SCL
+  #define OLED_SCL 22
+#endif
+#ifndef OLED_RST
+  #define OLED_RST 16
+#endif
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RST);
 
 //-------- LoRa ------------------
-const int lora_SS = 18;
-const int lora_RST = 23;
-const int lora_DIO0 = 26;
-const int lora_DIO1 = 33;
-const int lora_DIO2 = 32;
+#ifdef LORA_SS
+  #ifndef lora_SS
+    #define lora_SS LORA_SS
+  #endif
+#endif
+#ifdef LORA_RST
+  #ifndef lora_RST
+    #define lora_RST LORA_RST
+  #endif
+#endif
+#ifdef LORA_DIO0
+  #ifndef lora_DIO0
+    #define lora_DIO0 LORA_DIO0
+  #endif
+#endif
+#ifdef LORA_DIO1
+  #ifndef lora_DIO1
+    #define lora_DIO1 LORA_DIO1
+  #endif
+#endif
+#ifdef LORA_DIO2
+  #ifndef lora_DIO2
+    #define lora_DIO2 LORA_DIO2
+  #endif
+#endif
 int spreading_factor = 12;
 long bandwidth = 125000;
 int coding_rate = 5;
