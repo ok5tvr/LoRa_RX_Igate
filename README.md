@@ -1,3 +1,12 @@
+# Supported Boards
+
+The firmware supports several ESP32-based LoRa boards. Pin mappings are handled via board_pins.h and build_flags in platformio.ini.
+
+TTGO LoRa32 V1 / V2
+TTGO T-Beam
+Heltec WiFi LoRa 32 (V2)
+
+Select your board in platformio.ini (e.g. -DBOARD_TTGO_V1, -DBOARD_TBEAM, -DBOARD_HELTEC, -DBOARD_GENERIC).
 # Version 2.2.00
 Overview
 Version 2.2.00 adds dynamic LoRa configuration and secures the web interface and OTA updates with user-defined credentials.
