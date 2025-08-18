@@ -29,7 +29,7 @@ const int PLED1 = 25; // Pin pro LED na Trackeru
 //-------- Wi-Fi -----------------
 String IP = "0.0.0.0";
 String ssid = "Vlas_dolni_vlkys";
-String password = "tomasV860309";
+String password = "xxxxx";
 String ap_password = "mojeheslo123"; // Heslo pro AP
 
 //-------- Verze -----------------

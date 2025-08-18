@@ -1,7 +1,7 @@
 //----------------lora RX igate------------
 /// ------------wifi-------------
 wifi ssid <Vlas_dolni_vlkys>
-wifi heslo <tomasV860309>
+wifi heslo <XXXXXX>
 
 /// ------- ID APRS -------------------------
 call <OK5TVR-17>
