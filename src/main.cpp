@@ -687,6 +687,20 @@ button:disabled { background-color: #cccccc; cursor: not-allowed; }
 .message-item { border-bottom: 1px solid #ddd; padding: 10px 0; }
 .message-item:last-child { border-bottom: none; }
 .error { color: red; font-weight: bold; }
+.message-sender {
+  font-weight: bold;
+  color: #1b78e2;
+  cursor: pointer;
+  text-decoration: none;
+  background-color: #e6f0fa; /* Světle modré pozadí */
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+}
+.message-sender:hover {
+  background-color: #d1e3f6; /* Tmavší pozadí při přejetí */
+  color: #145ca1;
+}
 </style>
 </head><body>
 <div class="topnav">
@@ -698,7 +712,7 @@ button:disabled { background-color: #cccccc; cursor: not-allowed; }
 <div class="card">
 <h3>Send APRS Message</h3>
 <form action="/zpravy" method="POST">
-  <label>Recipient Callsign:</label><input type="text" name="recipient" placeholder="Enter callsign"><br>
+  <label>Recipient Callsign:</label><input type="text" id="recipient" name="recipient" oninput="this.value = this.value.toUpperCase()"><br>
   <label>Message:</label><textarea name="message" rows="4" placeholder="Enter your message"></textarea><br>
   <button type="submit" %SEND_BUTTON_STATE%>Send Message</button>
 </form>
@@ -710,6 +724,11 @@ button:disabled { background-color: #cccccc; cursor: not-allowed; }
   %MESSAGES%
 </div>
 </div>
+<script>
+function fillRecipient(callsign) {
+  document.getElementById('recipient').value = callsign.toUpperCase();
+}
+</script>
 </body></html>
 )rawliteral";
 //----------pozice pro mapu---------
@@ -957,15 +976,20 @@ if (var == "ERROR_MESSAGE") {
 }
 if (var == "MESSAGES") {
   String messages = "";
-  for (int i = 0; i < MESSAGE_BUFFER_SIZE; i++) {
-    if (buffer_zpravy[i][0] != '\0') {
+  if (message_cnt == 0) {
+    messages = "<p>No messages received.</p>";
+  } else {
+    int start_idx = (message_cnt > MESSAGE_BUFFER_SIZE) ? (message_cnt - MESSAGE_BUFFER_SIZE) : 0;
+    for (int i = start_idx; i < message_cnt; i++) {
+      int idx = i % MESSAGE_BUFFER_SIZE;
       messages += "<div class='message-item'>";
-      messages += "<strong>From: </strong>" + String(buffer_zpravy_odesilatel[i]) + "<br>";
-      messages += "<strong>Time: </strong>" + String(buffer_zpravy_cas[i]) + "<br>";
-      messages += "<strong>Message: </strong>" + String(buffer_zpravy[i]) + "</div>";
+      messages += "<div class='message-sender' onclick=\"fillRecipient('" + String(buffer_zpravy_odesilatel[idx]) + "')\">" + String(buffer_zpravy_odesilatel[idx]) + "</div>";
+      messages += "<div class='message-time'>" + String(buffer_zpravy_cas[idx]) + "</div>";
+      messages += "<div class='message-text'>" + String(buffer_zpravy[idx]) + "</div>";
+      messages += "</div>";
     }
   }
-  return messages.length() > 0 ? messages : "<p>No messages received.</p>";
+  return messages;
 }
 
   return String();
