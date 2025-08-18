@@ -151,6 +151,7 @@ NTPClient timeClient(ntpUDP, "0.cz.pool.ntp.org", 3600, 60000);
 AsyncWebServer server(80);
 
 ///-------------------aprs symboly base64
+bool iconSet = false;
 String digi = "iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAIAAABL1vtsAAAAvklEQVQ4ja2UsQ6DMBBDDbrBQ4d8asd+AmM/laGDhwwMUSm9hAsCLLbED8enZLDRcE0GQFmn/TSOFyMA6CA4kROlKGaEWJ0kTyLSO61ZgiANhCRJnP7+XHBN0GCjlYk4T1d6CQCNP0RNmZ+zS+H8qIe6LhR/eqTyOdx2G+ou3LKylFUozQ0NRFd1ox7h6qCRxvmzWwq2E6n9B+u8e6jBidAqEvFN9aNp+YvCa/a1Bf4O4qB2uzioe16t4frzuwDPVmVTXnQbfgAAAABJRU5ErkJggg==";
 
 String wx = "iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAIAAABL1vtsAAAA0klEQVQ4ja2UMRLEIAhFfxwKihS5/yktUlCk2AKXIGrirEuFCN9HlGyUCGtGAOSSn+uZOC0iFIqBfIzINS3RFvt4KxQbGdU/JKTn7RmVapVPAHLs7JY49tuxHIA7FExxDxDneJ89SEDnWsWWDCCf0suJEi0F1y3wsaPOiTeiJ5TmbRl2g3XuIJ8CsMMuEYVSX7m6FOW0hpb1pr7xiuWWkEt7Lid433DM9290o0Q2qZNPC+6Zx0kdDdKoXi1+i1eVNqGDrklLwz6JY/aHv9a2/vv9AESJS86PXo3VAAAAAElFTkSuQmCC";
@@ -171,7 +172,7 @@ String air = "iVBORw0KGgoAAAANSUhEUgAAABcAAAAXCAIAAABvSEP3AAAAAXNSR0IArs4c6QAAAA
 
 String lgate = "iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAYAAADEtGw7AAAAn0lEQVRIib2V0Q6FIAxDK85k//+1JmjufTIhuI2i4J7bQxlbWCTJDxNKAGA/9qFQFUUaSiyKBqsoVHQsuASy8CbYAjHwEKyiyGdGPnM33AUzqSKNCe55JE97A/dAI09qCZ7Cv1mQN6tde2+Jn8Atj3jCumf1LG/rFgZxe8wkjzRm4tJ4Jes9uDkVFoC5DTVuJYh93LAVHpypaQuyzPpM/6BgO2Ce0xXHAAAAAElFTkSuQmCC";
 
-String nahrada = "iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAYAAADEtGw7AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsIAAA7CARUoSoAAAAGHaVRYdFhNTDpjb20uYWRvYmUueG1wAAAAAAA8P3hwYWNrZXQgYmVnaW49J++7vycgaWQ9J1c1TTBNcENlaGlIenJlU3pOVGN6a2M5ZCc/Pg0KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyI+PHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj48cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0idXVpZDpmYWY1YmRkNS1iYTNkLTExZGEtYWQzMS1kMzNkNzUxODJmMWIiIHhtbG5zOnRpZmY9Imh0dHA6Ly9ucy5hZG9iZS5jb20vdGlmZi8xLjAvIj48dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPjwvcmRmOkRlc2NyaXB0aW9uPjwvcmRmOlJERj48L3g6eG1wbWV0YT4NCjw/eHBhY2tldCBlbmQ9J3cnPz4slJgLAAABJElEQVRIS9WVMW6DQBBF/y5T+AIcI67pKLnBKj4Lso+A6DF7Dy5A3BLfgZbWBeSnCQivwWAlVpInjYRmmL+j3dGMEi3EE1CihZf24vq/xUY20K7zp/gd4fP7GYf9AduXLUQLRAt2rzuc3k7ur7eIFrYf7WBjjDEEMGllWZLkVW5vooV3Kw6CAGVZgiRIoqoq+L4PAEjTFADgKQ+e8pzMhYqnyPOcAGiMcUPzFU+e7FAUBQAgiiI3dJ0/rniJOI4JgGEYsmkaN0x+VS1aOAgvsUaUjwonSbJKlI8K923Xt9g9Jh9vibquXdcswxBa0xFr6Nj9gSFkrYVSCtZaNzTLqqtQSg3f5Pxe6NgB7jzu2M1adswAANkxu4mNbcz/2yBKnrRMPwEr2hxmQbuRDwAAAABJRU5ErkJggg==";
+String nahrada = "iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAIAAABL1vtsAAAAfElEQVQ4je2UPQ6AMAhGX5tv4Dg9kkOP5eCROE4HBxfTOFj/mhgHvwkCvBACBEXRJwFlLo/rTRY7WwB+xHuIbC5zGdkeIbL5tJo+cUAJitpdLZelagOQ9tJOVssPYhs1EWlYKb5x7yEYSy1LA4zNO2rO4qL+M/sgIvS/3wXFgxtzEcFPQAAAAABJRU5ErkJggg==";
 
 //-------- HTML for Main Page --------
 const char index_html[] PROGMEM = R"rawliteral(
@@ -1765,24 +1766,31 @@ void loop() {
         dx_dist = round(distance);
         if (dx_dist > 2000) dx_dist = 0;
       }
+      
+  if (icon.length() > 0) {
+  if      (icon == "/#") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", digi.c_str());
+  else if (icon == "R#") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", digi.c_str());
+  else if (icon == "/r") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", digi.c_str());
+  else if (icon == "1#") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", digi.c_str());
+  else if (icon == "/>") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", car.c_str());
+  else if (icon == "\\>") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", car.c_str());
+  else if (icon == "L&") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", lgate.c_str());
+  else if (icon == "I&") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", igate.c_str());
+  else if (icon == "/_") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", wx.c_str());
+  else if (icon == "/[") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", chodec.c_str());
+  else if (icon == "//") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", red_dot.c_str());
+  else if (icon == "/a") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", sanita.c_str());
+  else if (icon == "/b") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", kolo.c_str());
+  else if (icon == "/'") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", air.c_str());
+  else snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", nahrada.c_str());
+} else {
+  // když není ikona vůbec → náhradní
+  snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", nahrada.c_str());
+}
 
-      // Výběr ikony
-      if      (icon == "/#") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", digi.c_str());
-      else if (icon == "R#") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", digi.c_str());
-      else if (icon == "/r") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", digi.c_str());
-      else if (icon == "1#") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", digi.c_str());
-      else if (icon == "/>") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", car.c_str());
-      else if (icon == "\\>") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", car.c_str());
-      else if (icon == "L&") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", lgate.c_str());
-      else if (icon == "I&") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", igate.c_str());
-      else if (icon == "/_") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", wx.c_str());
-      else if (icon == "/[") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", chodec.c_str());
-      else if (icon == "//") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", red_dot.c_str());
-      else if (icon == "/a") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", sanita.c_str());
-      else if (icon == "/b") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", kolo.c_str());
-      else if (icon == "/'") snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", air.c_str());
-      else {snprintf(buffer_icona[idx], sizeof(buffer_icona[idx]), "%s", nahrada.c_str());}
-    }
+}
+
+
 
     // věk záznamu
     buffer_age[idx] = cas_new;
