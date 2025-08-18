@@ -33,7 +33,7 @@ String password = "tomasV860309";
 String ap_password = "mojeheslo123"; // Heslo pro AP
 
 //-------- Verze -----------------
-String verze = "2.2.00"; // Aktualizováno pro editaci config.txt
+String verze = "3.0.00"; // Aktualizováno pro editaci config.txt
 
 //-------- APRS ID ---------------
 String call = "OK5TVR-17";
@@ -73,6 +73,17 @@ double buffer_lat[BUFFER_SIZE]; // Array for latitude
 double buffer_lon[BUFFER_SIZE]; // Array for longitude
 byte cnt = 0;
 int filled = 0; 
+
+//-----bufer zpravy-----------
+//-------- Buffer pro zprávy --------
+#define MESSAGE_BUFFER_SIZE 5
+char buffer_zpravy[MESSAGE_BUFFER_SIZE][128]; // Text zprávy
+char buffer_zpravy_cas[MESSAGE_BUFFER_SIZE][10]; // Čas přijetí
+char buffer_zpravy_odesilatel[MESSAGE_BUFFER_SIZE][10]; // Odesílatel
+long buffer_zpravy_age[MESSAGE_BUFFER_SIZE]; // Věk zprávy
+int message_cnt = 0;
+int posGt = 0;
+String call_d = ""; // Call sign of the station
 
 //-------- Digi/iGate/AP ------------
 int digi_mode = 1;
@@ -188,8 +199,8 @@ h3 {font-size: 1rem;}
 .card {background-color: white; box-shadow: 2px 2px 12px 1px rgba(140,140,140,.5); text-align: center;}
 .cards {max-width: 700px; margin: 0 auto; display: grid; grid-gap: 2rem; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));}
 .button-container {position: absolute; top: 50%; right: 20px; transform: translateY(-50%); display: flex; gap: 10px;}
-.setup-button, .ota-button, .map-button {padding: 12px 24px; background-color: #1b78e2; color: white; border: 2px solid white; border-radius: 10px; cursor: pointer; font-weight: bold; z-index: 1000; font-size: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.3); text-decoration: none;}
-.setup-button:hover, .ota-button:hover, .map-button:hover {background-color: #145ca1;}
+.setup-button, .ota-button, .map-button, .messages-button {padding: 12px 24px; background-color: #1b78e2; color: white; border: 2px solid white; border-radius: 10px; cursor: pointer; font-weight: bold; z-index: 1000; font-size: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.3); text-decoration: none;}
+.setup-button:hover, .ota-button:hover, .map-button:hover, .messages-button:hover {background-color: #145ca1;}
 </style>
 </head><body>
 <div class="topnav">
@@ -197,6 +208,7 @@ h3 {font-size: 1rem;}
 <div class="button-container">
   <a href="/nastaveni"><button class="setup-button">Setup</button></a>
   <a href="/update"><button class="ota-button">OTA</button></a>
+  <a href="/zpravy"><button class="messages-button">Messages</button></a>
   %MAP_BUTTON%
 </div>
 </div>
@@ -652,7 +664,54 @@ const char map_html[] PROGMEM = R"rawliteral(
 </body>
 </html>
 )rawliteral";
-
+//-----------web messege
+const char zpravy_html[] PROGMEM = R"rawliteral(
+<!DOCTYPE HTML><html><head>
+<meta charset="windows-1250">
+<title>LoRa RX iGate - Messages</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body { margin: 0; font-family: Arial, sans-serif; background-color: #f0f0f0; }
+h2 { font-size: 1.8rem; color: white; text-align: center; margin: 0; padding: 15px 0; }
+.topnav { overflow: visible; background-color: #1b78e2; position: relative; padding: 15px 0; min-height: 60px; }
+.button-container { position: absolute; top: 50%; right: 20px; transform: translateY(-50%); display: flex; gap: 10px; }
+.back-button { padding: 12px 24px; background-color: #1b78e2; color: white; border: 2px solid white; border-radius: 10px; cursor: pointer; font-weight: bold; z-index: 1000; font-size: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.3); text-decoration: none; }
+.back-button:hover { background-color: #145ca1; }
+.card { background-color: white; box-shadow: 2px 2px 12px 1px rgba(140,140,140,.5); padding: 20px; margin: 20px auto; max-width: 700px; }
+label { display: inline-block; width: 150px; font-weight: bold; }
+input, textarea { width: 300px; padding: 5px; margin: 5px 0; }
+button { padding: 10px 20px; background-color: #1b78e2; color: white; border: none; cursor: pointer; }
+button:hover { background-color: #145ca1; }
+button:disabled { background-color: #cccccc; cursor: not-allowed; }
+.message-list { margin-top: 20px; }
+.message-item { border-bottom: 1px solid #ddd; padding: 10px 0; }
+.message-item:last-child { border-bottom: none; }
+.error { color: red; font-weight: bold; }
+</style>
+</head><body>
+<div class="topnav">
+<h2>LoRa RX iGate - Messages</h2>
+<div class="button-container">
+  <a href="/"><button class="back-button">Back</button></a>
+</div>
+</div>
+<div class="card">
+<h3>Send APRS Message</h3>
+<form action="/zpravy" method="POST">
+  <label>Recipient Callsign:</label><input type="text" name="recipient" placeholder="Enter callsign"><br>
+  <label>Message:</label><textarea name="message" rows="4" placeholder="Enter your message"></textarea><br>
+  <button type="submit" %SEND_BUTTON_STATE%>Send Message</button>
+</form>
+<p class="error">%ERROR_MESSAGE%</p>
+</div>
+<div class="card">
+<h3>Received Messages</h3>
+<div class="message-list">
+  %MESSAGES%
+</div>
+</div>
+</body></html>
+)rawliteral";
 //----------pozice pro mapu---------
 double convertToDecimalDegreesLat(const String& lat) {
   if (lat.length() < 6) return 50.0; // Výchozí hodnota při neplatném vstupu
@@ -889,6 +948,25 @@ String procesor(const String& var) {
   if (var == "DISTANCE4") return String(buffer_vzdalenost[4]);
   if (var == "AZIMUTH4") return String(buffer_azimut[4]);
   
+  //---------------mesenger------------
+  if (var == "SEND_BUTTON_STATE") {
+  return (digi_AP == 1) ? "" : "disabled";
+}
+if (var == "ERROR_MESSAGE") {
+  return "";
+}
+if (var == "MESSAGES") {
+  String messages = "";
+  for (int i = 0; i < MESSAGE_BUFFER_SIZE; i++) {
+    if (buffer_zpravy[i][0] != '\0') {
+      messages += "<div class='message-item'>";
+      messages += "<strong>From: </strong>" + String(buffer_zpravy_odesilatel[i]) + "<br>";
+      messages += "<strong>Time: </strong>" + String(buffer_zpravy_cas[i]) + "<br>";
+      messages += "<strong>Message: </strong>" + String(buffer_zpravy[i]) + "</div>";
+    }
+  }
+  return messages.length() > 0 ? messages : "<p>No messages received.</p>";
+}
 
   return String();
 }
@@ -1186,6 +1264,14 @@ void setup() {
     buffer_lon[i] = 0.0; // Initialize longitude
   }
 
+  // Initialize message buffers
+for (int i = 0; i < MESSAGE_BUFFER_SIZE; i++) {
+  buffer_zpravy[i][0] = '\0';
+  buffer_zpravy_cas[i][0] = '\0';
+  buffer_zpravy_odesilatel[i][0] = '\0';
+  buffer_zpravy_age[i] = 0;
+}
+
   //-------- SPIFFS --------
   if (!SPIFFS.begin(true)) {
     Serial.println("Chyba SPIFFS");
@@ -1413,6 +1499,41 @@ void setup() {
         request->send(500, "text/plain", "Chyba při ukládání konfigurace");
       }
     });
+    server.on("/zpravy", HTTP_GET, [](AsyncWebServerRequest *request) {
+  Serial.println("Client připojen k zprávám: " + request->client()->remoteIP().toString());
+  if (!request->authenticate(web_username.c_str(), web_password.c_str())) {
+    return request->requestAuthentication();
+  }
+  request->send_P(200, "text/html", zpravy_html, procesor);
+});
+server.on("/zpravy", HTTP_POST, [](AsyncWebServerRequest *request) {
+  if (!request->authenticate(web_username.c_str(), web_password.c_str())) {
+    return request->requestAuthentication();
+  }
+  if (digi_AP != 1) {
+    request->send(403, "text/plain", "Sending messages is only allowed in AP+DIGI mode");
+    return;
+  }
+  String recipient = request->hasParam("recipient", true) ? request->getParam("recipient", true)->value() : "";
+  String message = request->hasParam("message", true) ? request->getParam("message", true)->value() : "";
+  if (recipient.length() == 0 || message.length() == 0) {
+    request->send(400, "text/plain", "Recipient and message cannot be empty");
+    return;
+  }
+  if (message.length() > 67) { // APRS zpráva max 67 znaků
+    request->send(400, "text/plain", "Message too long (max 67 characters)");
+    return;
+  }
+  // Odeslání zprávy přes LoRa
+  String aprs_message = call + ">APZ023::" + recipient + " :" + message + "{01";
+  digitalWrite(PLED1, HIGH);
+  LoRa.beginPacket();
+  LoRa.print("<" + String((char)0xFF) + String((char)0x01) + aprs_message);
+  LoRa.endPacket();
+  digitalWrite(PLED1, LOW);
+  Serial.println("Zpráva odeslána přes RF: " + aprs_message);
+  request->send_P(200, "text/html", zpravy_html, procesor);
+});
     server.onNotFound(notFound);
     server.begin();
     cas_new = millis() / 1000;
@@ -1503,6 +1624,19 @@ void setup() {
         request->send(500, "text/plain", "Chyba při ukládání konfigurace");
       }
     });
+server.on("/zpravy", HTTP_GET, [](AsyncWebServerRequest *request) {
+  Serial.println("Client připojen k zprávám: " + request->client()->remoteIP().toString());
+  if (!request->authenticate(web_username.c_str(), web_password.c_str())) {
+    return request->requestAuthentication();
+  }
+  request->send_P(200, "text/html", zpravy_html, procesor);
+});
+server.on("/zpravy", HTTP_POST, [](AsyncWebServerRequest *request) {
+  if (!request->authenticate(web_username.c_str(), web_password.c_str())) {
+    return request->requestAuthentication();
+  }
+  request->send(403, "text/plain", "Sending messages is only allowed in AP+DIGI mode");
+});
     server.onNotFound(notFound);
     server.begin();
     con_aprs();
@@ -1663,6 +1797,40 @@ void loop() {
     }
     rx_cnt++;
 
+    //---------zpracování zprávy------------
+// Extrakce volací značky odesílatele (call_d)
+int posGt = packet.indexOf(">");
+if (posGt == -1) {
+  Serial.println("Invalid packet format, missing '>'");
+  return;
+}
+call_d = packet.substring(0, posGt);
+
+// Rozpoznání APRS zprávy
+int colonIndex = packet.indexOf(':');
+if (colonIndex != -1 && packet[colonIndex + 1] == ':' && colonIndex + 11 < packet.length()) {
+  String destCall = packet.substring(colonIndex + 2, colonIndex + 11);
+  destCall.trim();
+  if (destCall == call) { // Zpráva je určena pro nás
+    String message = packet.substring(colonIndex + 11);
+    int braceIndex = message.indexOf('{');
+    if (braceIndex != -1) {
+      message = message.substring(0, braceIndex); // Odstraníme ID zprávy
+    }
+    // Uložení zprávy do bufferu
+    int msg_idx = message_cnt % MESSAGE_BUFFER_SIZE;
+    snprintf(buffer_zpravy[msg_idx], sizeof(buffer_zpravy[msg_idx]), "%s", message.c_str());
+    snprintf(buffer_zpravy_odesilatel[msg_idx], sizeof(buffer_zpravy_odesilatel[msg_idx]), "%s", call_d.c_str());
+    if (digi_mode == 0 && digi_AP == 0) {
+      String t = timeClient.getFormattedTime();
+      snprintf(buffer_zpravy_cas[msg_idx], sizeof(buffer_zpravy_cas[msg_idx]), "%s", t.c_str());
+    } else {
+      snprintf(buffer_zpravy_cas[msg_idx], sizeof(buffer_zpravy_cas[msg_idx]), "%ldm", currentTime / 60);
+    }
+    buffer_zpravy_age[msg_idx] = cas_new;
+    message_cnt++;
+  }
+}
     // iGate upload (qAS), nebo digi RF forward
     if (digi_mode == 0 && digi_AP == 0) {
       String toSend = packet;
@@ -1697,7 +1865,7 @@ void loop() {
     }
 
     // --- rozbor packetu a zápis do bufferu 5 unikátních stanic ---
-    int posGt = packet.indexOf(">");
+    posGt = packet.indexOf(">");
     if (posGt == -1) return;
 
     String call_d = packet.substring(0, posGt);

@@ -1,3 +1,11 @@
+# LoRa RX iGate - Enhancements
+
+Added support for sending and receiving APRS messages:
+New /zpravy page displays received messages and allows sending messages via LoRa in AP+DIGI mode.
+Added "Messages" button on the main page for quick access.
+Messages are stored in a buffer (max. 5 messages) with sender and receipt time information.
+Sending messages is restricted to AP+DIGI mode, with validation for callsign and message length (max. 67 characters).
+
 # Supported Boards
 
 The firmware supports several ESP32-based LoRa boards. Pin mappings are handled via board_pins.h and build_flags in platformio.ini.
@@ -36,7 +44,6 @@ Notes
 Config File: config.txt now uses 26 parameters. Add <admin><admin> at the start for compatibility.
 Testing: Confirm LoRa settings apply correctly and authentication prompts appear for /nastaveni and /update.
 Security: Passwords are stored in plain text. Consider hashing for future enhancements.
-
 # Enhanced Map Display for LoRa RX iGate
 The LoRa RX iGate firmware has been updated (version 2.1.12) to include an enhanced map display feature. The map now shows the last five received stations from the buffers (buffer, buffer_lat, buffer_lon, buffer_RSSI, buffer_SN, buffer_vzdalenost, buffer_azimut) using blue markers, while the iGate itself (call, lat, lon) is displayed with a red marker. Key improvements include:
 
@@ -76,14 +83,12 @@ in config.txt
 
 # LoRa_RX_Igate Update 3.6.2023
 Version 2.1.1 is available on GitHub. This version fixes the issue with IP address assignment using the DHCP server. In the settings, the option "IP_manual <true>" corresponds to a static IP address, while "IP_manual <false>" corresponds to automatic IP address assignment.
-
 # LoRa_RX_Igate Update 2.6.2023
 With the update to version 2.1.0, the configuration from the config.txt file is fully functional. You can modify the igate settings by changing the configuration in the txt file. The desired values must be enclosed in "<>". The end of the file is marked with "!".
-
 # LoRa_RX_Igate Update 1.6.2023
 This update enables OTA updates through a web interface. The address is the IP address of the device followed by "/update". Additionally, it is possible to configure a static or DHCP-assigned address in the settings. The address will be displayed on the home screen. The configuration is done on line 44 of the code ("bool pouzitPevnouIP = true;") where false corresponds to DHCP. Preparation is underway to extract the settings from the base code using SPIFFS.h. Therefore, before the initial launch via PlatformIO, it is necessary to upload the "config.txt" file using PlatformIO --> Upload Filesystem Image.
  <b>Please perform the configuration in the source code.</b>
-
+ 
 # LoRa_RX_Igate Update 28.5.2023
 In the update, code for sending telemetry to the APRS network has been added. An option for decoding compressed location from an APRS packet has been included. Basic icons can be decoded from APRS packets, and they are displayed on the igate website.
 # LoRa_RX_Igate Update 22.5.2023
