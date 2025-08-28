@@ -1,3 +1,20 @@
+# LoRa RX iGate - 4.5.00
+**Tracker**
+
+Added tracker integration with web configuration (on/off, custom CALL, APRS icon selection, comment source: custom / speed & altitude).
+Switch for compressed position transmission.
+Smart Beacon settings editable via web (persisted to SPIFFS): slowRate, slowSpeed, fastRate, fastSpeed, minTXdist, minDeltaBeacon, turnMinDeg, turnSlope.
+GPS watchdog – warns on missing frames.
+Live time + NMEA moved to the top of the web UI.
+OLED display: tracker state, position, altitude, speed, blinking * on GPS FIX activity, last RX info on the bottom line.
+Persistence: tracker remembers last state after reboot and runs without the web UI; /tracker.cfg is auto-created on first save.
+Project fix: moved #include "setup_tracker.h" below global declarations (fixes “not declared in this scope”).
+
+**Object Sender**
+New secured /objects page to manage up to 5 APRS objects.
+Per object: enable, name (9 chars), DDMM.mmN / DDDMM.mmE, table (/ or \), symbol, LIVE/KILL, comment, interval (min).
+Send now button for immediate transmit; periodic sending by interval (iGate → APRS-IS, Digi/AP → RF).
+Config stored in /objects.cfg; scheduler survives reboots.
 # LoRa RX iGate - Enhancements
 
 Added support for sending and receiving APRS messages:

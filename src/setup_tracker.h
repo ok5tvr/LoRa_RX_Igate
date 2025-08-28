@@ -500,30 +500,30 @@ static String _buildPage() {
 
   // Status
   page += "<div class='card'><h3>Status</h3>";
-  page += "<div class='row'>Stav: <b>";
-  page += (_running ? "<span class='ok'>BĚŽÍ</span>" : "STOP");
-  page += "</b> &nbsp;|&nbsp; Režim: ";
-  page += ( (digi_mode==0 && digi_AP==0) ? "iGate (bez TX)" : "Digi/RF TX");
+  page += "<div class='row'>Status: <b>";
+  page += (_running ? "<span class='ok'>ENABLED</span>" : "STOP");
+  page += "</b> &nbsp;|&nbsp; Mode: ";
+  page += ( (digi_mode==0 && digi_AP==0) ? "iGate (no TX)" : "Digi/RF TX");
   page += "</div>";
-  if (!gpsOk) page += "<div class='warn'>GPS: nechodí NMEA rámce (zkontroluj zapojení/piny/baud)</div>";
+  if (!gpsOk) page += "<div class='warn'>GPS: no NMEA frames (check wiring/pins/baud rate)</div>";
   page += "<div class='row'>Fix: <b>";
-  page += (_haveFix ? "ANO" : "NE");
+  page += (_haveFix ? "YES" : "NO");
   page += "</b> &nbsp; Lat: "+String(_lat,5)+" Lon: "+String(_lon,5)+"&nbsp; Alt: "+String(_altM,0)+" m &nbsp; Spd: "+String(_speedKmh,0)+" km/h</div>";
   page += "<div class='row'>NMEA(RMC): "+_htmlEscape(_lastRMC)+"</div>";
   page += "<div class='row'>NMEA(GGA): "+_htmlEscape(_lastGGA)+"</div>";
-  page += "<div class='row'><a href='/'><button class='btn'>← Zpět</button></a> ";
+  page += "<div class='row'><a href='/'><button class='btn'>← Back</button></a> ";
   page += "<a href='/tracker/toggle'><button class='btn'>";
   page += (_running? "Stop tracker" : "Start tracker");
   page += "</button></a></div></div>";
 
   // Form konfigurace
-  page += "<div class='card'><h3>Nastavení</h3>";
+  page += "<div class='card'><h3>Setup</h3>";
   page += "<form method='POST' action='/tracker'>";
   page += "<div class='row'><label>Tracker CALL</label><input name='trk_call' value='"+_htmlEscape(_trackerCall())+"' oninput='this.value=this.value.toUpperCase()'></div>";
   page += "<div class='row'><label>GPS RX pin</label><input type='number' name='gps_rx' value='"+String(_cfg.gpsRxPin)+"'> ";
   page += "<label>GPS TX pin</label><input type='number' name='gps_tx' value='"+String(_cfg.gpsTxPin)+"'></div>";
   page += "<div class='row'><label>GPS Baud</label><input type='number' name='gps_baud' value='"+String(_cfg.gpsBaud)+"'></div>";
-  page += "<div class='row'><label>Komprimovaná poloha</label><select name='compressed'><option value='1' ";
+  page += "<div class='row'><label>Compressed position</label><select name='compressed'><option value='1' ";
   page += (_cfg.compressed?"selected":"");
   page += ">ano</option><option value='0' ";
   page += (!_cfg.compressed?"selected":"");
@@ -537,30 +537,30 @@ static String _buildPage() {
   page += String(_cfg.symCh);
   page += "' oninput='this.value=this.value.toUpperCase()'></div>";
 
-  page += "<div class='row'><label>Komentář</label><select name='cmmode'>"
-          "<option value='0' "; page += (_cfg.commentMode==0?"selected":""); page += ">Vlastní text</option>"
-          "<option value='1' "; page += (_cfg.commentMode==1?"selected":""); page += ">Rychlost + výška</option>"
+  page += "<div class='row'><label>Comment beacon</label><select name='cmmode'>"
+          "<option value='0' "; page += (_cfg.commentMode==0?"selected":""); page += ">Comment text</option>"
+          "<option value='1' "; page += (_cfg.commentMode==1?"selected":""); page += ">speed + alt</option>"
           "</select></div>";
-  page += "<div class='row'><label>Vlastní komentář</label><input name='comment' maxlength='60' value='"+_htmlEscape(_cfg.comment)+"'></div>";
+  page += "<div class='row'><label>Comment text</label><input name='comment' maxlength='60' value='"+_htmlEscape(_cfg.comment)+"'></div>";
 
   page += "<hr><h4>Smart Beacon</h4>";
-  page += "<div class='row'><label>Zapnuto</label><select name='sb_on'><option value='1' ";
+  page += "<div class='row'><label>ON</label><select name='sb_on'><option value='1' ";
   page += (_cfg.sbActive?"selected":""); page += ">ano</option><option value='0' ";
   page += (!_cfg.sbActive?"selected":""); page += ">ne</option></select></div>";
 
-  page += "<div class='row'><label>Pomalu (rate, s)</label><input type='number' name='sb_slowrate' value='"+String(_cfg.slowRate)+"'> ";
-  page += "<label>Pomalu (speed, km/h)</label><input type='number' name='sb_slowspeed' value='"+String(_cfg.slowSpeed,0)+"'></div>";
+  page += "<div class='row'><label>Slow (rate, s)</label><input type='number' name='sb_slowrate' value='"+String(_cfg.slowRate)+"'> ";
+  page += "<label>Slow (speed, km/h)</label><input type='number' name='sb_slowspeed' value='"+String(_cfg.slowSpeed,0)+"'></div>";
 
-  page += "<div class='row'><label>Rychle (rate, s)</label><input type='number' name='sb_fastrate' value='"+String(_cfg.fastRate)+"'> ";
-  page += "<label>Rychle (speed, km/h)</label><input type='number' name='sb_fastspeed' value='"+String(_cfg.fastSpeed,0)+"'></div>";
+  page += "<div class='row'><label>Fast (rate, s)</label><input type='number' name='sb_fastrate' value='"+String(_cfg.fastRate)+"'> ";
+  page += "<label>Fast (speed, km/h)</label><input type='number' name='sb_fastspeed' value='"+String(_cfg.fastSpeed,0)+"'></div>";
 
-  page += "<div class='row'><label>Min TX vzdálenost (m)</label><input type='number' name='sb_mindist' value='"+String(_cfg.minTxDist)+"'> ";
+  page += "<div class='row'><label>Min TX distance (m)</label><input type='number' name='sb_mindist' value='"+String(_cfg.minTxDist)+"'> ";
   page += "<label>Min delta (s)</label><input type='number' name='sb_mindelta' value='"+String(_cfg.minDeltaBeacon)+"'></div>";
 
   page += "<div class='row'><label>Min turn (deg)</label><input type='number' name='sb_turnmin' value='"+String(_cfg.turnMinDeg,0)+"'> ";
   page += "<label>Turn slope</label><input type='number' name='sb_turnslope' value='"+String(_cfg.turnSlope,0)+"'></div>";
 
-  page += "<div class='row'><button class='btn' type='submit'>Uložit</button></div>";
+  page += "<div class='row'><button class='btn' type='submit'>Save</button></div>";
   page += "</form></div>";
 
   page += "</div></body></html>";
