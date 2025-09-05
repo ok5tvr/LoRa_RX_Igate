@@ -11,9 +11,11 @@
 #include <APRS-Decoder.h>
 #include <math.h>
 #include <string>
-#include <AsyncElegantOTA.h>
+#include <ElegantOTA.h>
 #include <SPIFFS.h>
 #include "board_pins.h"
+#include <WebSerial.h>
+
 
 //----hesla--------
 String web_username = "admin"; // Výchozí uživatelské jméno
@@ -33,7 +35,7 @@ String password = "xxxxx";
 String ap_password = "mojeheslo123"; // Heslo pro AP
 
 //-------- Verze -----------------
-String verze = "3.0.00"; // Aktualizováno pro editaci config.txt
+String verze = "4.5.00"; // Aktualizováno pro editaci config.txt
 
 //-------- APRS ID ---------------
 String call = "OK5TVR-17";
@@ -209,7 +211,10 @@ h3 {font-size: 1rem;}
   <a href="/nastaveni"><button class="setup-button">Setup</button></a>
   <a href="/update"><button class="ota-button">OTA</button></a>
   <a href="/zpravy"><button class="messages-button">Messages</button></a>
+  %OBJECTS_BUTTON%
   %MAP_BUTTON%
+  %TRACKER_BUTTON%
+  %SERIAL_BUTTON%
 </div>
 </div>
 </br>
@@ -472,7 +477,7 @@ button:hover {background-color: #145ca1;}
 </div>
 </body></html>
 )rawliteral";
-//-------- HTML for Map Page --------
+
 //-------- HTML for Map Page --------
 const char map_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html lang="cs">
@@ -966,8 +971,22 @@ String procesor(const String& var) {
   if (var == "SNR4") return String(buffer_SN[4]);
   if (var == "DISTANCE4") return String(buffer_vzdalenost[4]);
   if (var == "AZIMUTH4") return String(buffer_azimut[4]);
-  
-  //---------------mesenger------------
+
+  //----object---------
+  if (var == "OBJECTS_BUTTON") {
+    return "<a href=\"/objects\"><button class=\"map-button\">Objects</button></a>";
+  }
+
+  //--------tracker----------
+  if (var == "TRACKER_BUTTON") {
+  // tlačítko zobrazíme vždy; v iGate jen pro zobrazení, v Digi/AP+Digi umožní TX
+  return "<a href=\"/tracker\"><button class='setup-button'>Tracker</button></a>";
+}
+  //-------serial----
+  if (var == "SERIAL_BUTTON") {
+  return "<a href=\"/serial\"><button class=\"map-button\">Serial</button></a>";
+}
+   //---------------mesenger------------
   if (var == "SEND_BUTTON_STATE") {
   return (digi_AP == 1) ? "" : "disabled";
 }
@@ -994,7 +1013,9 @@ if (var == "MESSAGES") {
 
   return String();
 }
-
+//----------webserial-----------
+#define WLOGln(x) do { Serial.println(x); WebSerial.println(x); } while(0)
+#define WLOGf(...) do { Serial.printf(__VA_ARGS__); WebSerial.printf(__VA_ARGS__); } while(0)
 //-------- Funkce pro Wi-Fi a APRS --------
 void wifi() {
   WiFi.setHostname("lora_RX_igate_");
@@ -1007,12 +1028,12 @@ void wifi() {
     WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
     WiFi.softAP(apSSID.c_str(), ap_password.c_str());
     IP = apIP.toString();
-    Serial.println("WiFi AP started, SSID: " + apSSID + ", IP: " + IP);
+    WLOGln("WiFi AP started, SSID: " + apSSID + ", IP: " + IP);
   } else {
     // Režim klienta (připojení k Wi-Fi síti)
     if (pouzitPevnouIP) {
       if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
-        Serial.println("STA Failed to configure");
+        WLOGln("STA Failed to configure");
       }
     }
     WiFi.begin(ssid.c_str(), password.c_str());
@@ -1026,8 +1047,8 @@ void wifi() {
 }
 
 void con_aprs() {
-  Serial.println("\nStarting APRS connection...");
-  Serial.println("Připojuji se k APRS serveru: " + String(servername) + ":" + String(aprs_port));
+  WLOGln("\nStarting APRS connection...");
+  WLOGln("Připojuji se k APRS serveru: " + String(servername) + ":" + String(aprs_port));
   if (client.connect(servername, aprs_port)) {
     Serial.println("Connected to APRS server: " + String(servername) + ":" + String(aprs_port));
     client.println("");
@@ -1045,14 +1066,14 @@ void con_aprs() {
     client.println(call + ">APZ023,TCPIP*:>https://github.com/ok5tvr/LoRa_RX_Igate");
     client.flush();
   } else {
-    Serial.println("APRS connection failed to: " + String(servername) + ":" + String(aprs_port));
+    WLOGln("APRS connection failed to: " + String(servername) + ":" + String(aprs_port));
   }
 }
 
 //-------- Funkce pro Digi mód --------
 bool uzJsemDigipeatoval(String paket, String digiCall) {
   if (paket.indexOf("*") != -1) {
-    Serial.println("Paket již obsahuje zpracovaný prvek cesty (*), ignoruji.");
+    WLOGln("Paket již obsahuje zpracovaný prvek cesty (*), ignoruji.");
     return true;
   }
   return false;
@@ -1066,7 +1087,7 @@ String upravDigipeaterPath(String paket, String digiCall) {
   int startIndex = paket.indexOf(">");
   int endIndex = paket.indexOf(":");
   if (startIndex == -1 || endIndex == -1 || endIndex <= startIndex) {
-    Serial.println("Chybný formát paketu, cesta se neupraví.");
+    WLOGln("Chybný formát paketu, cesta se neupraví.");
     return paket;
   }
 
@@ -1086,10 +1107,10 @@ String upravDigipeaterPath(String paket, String digiCall) {
   }
 
   if (path.length() == 0) {
-    Serial.println("Prázdná cesta, přidávám: " + digiCall + "*");
+    WLOGln("Prázdná cesta, přidávám: " + digiCall + "*");
     String finalPath = destination + "," + digiCall + "*";
-    Serial.println("Původní cesta: " + pathAndDest);
-    Serial.println("Upravená cesta: " + finalPath);
+    WLOGln("Původní cesta: " + pathAndDest);
+    WLOGln("Upravená cesta: " + finalPath);
     return sourceCall + ">" + finalPath + data;
   }
 
@@ -1151,11 +1172,11 @@ String upravDigipeaterPath(String paket, String digiCall) {
   }
 
   if (processed) {
-    Serial.println("Původní cesta: " + pathAndDest);
-    Serial.println("Upravená cesta: " + finalPath);
+    WLOGln("Původní cesta: " + pathAndDest);
+    WLOGln("Upravená cesta: " + finalPath);
     return sourceCall + ">" + finalPath + data;
   }
-  Serial.println("Žádný alias k přeposlání, paket ignorován: " + pathAndDest);
+  WLOGln("Žádný alias k přeposlání, paket ignorován: " + pathAndDest);
   return paket;
 }
 
@@ -1167,14 +1188,14 @@ void posliBeacon() {
     LoRa.print("<" + String((char)0xFF) + String((char)0x01) + beacon);
     LoRa.endPacket();
     digitalWrite(PLED1, LOW);
-    Serial.println("BEACON vyslán přes RF: " + beacon);
+    WLOGln("BEACON vyslán přes RF: " + beacon);
   } else {
     if (client.connected()) {
       client.println(beacon);
       client.flush();
-      Serial.println("BEACON poslán na APRS-IS: " + beacon);
+      WLOGln("BEACON poslán na APRS-IS: " + beacon);
     } else {
-      Serial.println("BEACON – není spojení k APRS-IS, reconnect...");
+      WLOGln("BEACON – není spojení k APRS-IS, reconnect...");
       if (WiFi.status() == WL_CONNECTED) {
         client.stop();
         con_aprs();
@@ -1265,6 +1286,211 @@ uint8_t temprature_sens_read();
 }
 #endif
 
+//--------object--------
+// === Objects scheduling (5 slots) ===
+struct AprsObjectCfg {
+  bool    enabled = false;
+  String  name    = "";
+  String  latstr  = "";   // DDMM.mmN
+  String  lonstr  = "";   // DDDMM.mmE
+  char    tableCh = '/';  // '/' nebo '\'
+  char    symCh   = 'L';  // 1 znak
+  bool    killFlag = false;   // false = LIVE '*', true = KILL '_'
+  uint32_t intervalMin = 60;  // perioda v minutách
+  uint32_t nextDueSec  = 0;   // další termín (sekundy epoch/uptime)
+  String comment = "";
+};
+
+AprsObjectCfg OBJ[5];
+const char* OBJECTS_FILE = "/objects.cfg";
+
+// --- Pomocné z minula (nech jen jednou v kódu) ---
+String padObjectName9(const String& name) {
+  String n = name;
+  if (n.length() > 9) return n.substring(0, 9);
+  while (n.length() < 9) n += " ";
+  return n;
+}
+String aprsObjectTimestamp() {
+  char buf[8] = {0};
+  if (digi_mode == 0 && digi_AP == 0) {
+    time_t t = timeClient.getEpochTime();
+    struct tm *utc = gmtime(&t);
+    snprintf(buf, sizeof(buf), "%02d%02d%02dz", utc->tm_mday, utc->tm_hour, utc->tm_min);
+  } else {
+    unsigned long s = millis() / 1000;
+    int hh = (s % 86400) / 3600;
+    int mm = (s % 3600) / 60;
+    int ss = s % 60;
+    snprintf(buf, sizeof(buf), "%02d%02d%02dz", hh, mm, ss);
+  }
+  return String(buf);
+}
+String buildAprsObject(const String& name9, bool killFlag,
+                       const String& lat_ddmm, const String& lon_dddmm,
+                       char tableChar, char symChar,
+                       const String& comment) {
+  String payload = ";";
+  payload += name9;
+  payload += (killFlag ? "_" : "*");
+  payload += aprsObjectTimestamp();
+  payload += lat_ddmm;
+  payload += tableChar;
+  payload += lon_dddmm;
+  payload += symChar;
+  if (comment.length() > 0) { payload += " "; payload += comment; }
+  return payload;
+}
+void sendAprsObject(const String& payload) {
+  String frame;
+  if (digi_mode == 0 && digi_AP == 0) {              // iGate → APRS-IS
+    if (!client.connected()) { client.stop(); con_aprs(); }
+    frame = call + ">APZ023,TCPIP*:" + payload;
+    client.println(frame); client.flush();
+    WLOGln("OBJECT → APRS-IS: " + frame);
+  } else {                                           // Digi / Digi+AP → RF
+    frame = call + ">APZ023:" + payload;
+    digitalWrite(PLED1, HIGH);
+    LoRa.beginPacket();
+    LoRa.print("<" + String((char)0xFF) + String((char)0x01) + frame);
+    LoRa.endPacket();
+    digitalWrite(PLED1, LOW);
+    WLOGln("OBJECT → RF: <FF 01 " + frame + ">");
+  }
+}
+
+// --- Uložení/načtení do SPIFFS (/objects.cfg) ---
+// Formát: pro každý objekt 9 tagů: <EN><NAME><LAT><LON><TABLE><SYM><COMMENT><KILL><INTERVAL>
+void saveObjectsConfig() {
+  String s = "";
+  for (int i = 0; i < 5; i++) {
+    s += "<" + String(OBJ[i].enabled ? "1" : "0") + ">";
+    s += "<" + OBJ[i].name + ">";
+    s += "<" + OBJ[i].latstr + ">";
+    s += "<" + OBJ[i].lonstr + ">";
+    s += "<"; s += OBJ[i].tableCh; s += ">";
+    s += "<"; s += OBJ[i].symCh;   s += ">";
+    s += "<" + OBJ[i].comment + ">";
+    s += "<" + String(OBJ[i].killFlag ? "1" : "0") + ">";
+    s += "<" + String(OBJ[i].intervalMin) + ">";
+  }
+  File f = SPIFFS.open(OBJECTS_FILE, FILE_WRITE);
+  if (!f) { WLOGln("saveObjectsConfig: open FAIL"); return; }
+  f.print(s);
+  f.close();
+  Serial.println("Objects saved.");
+}
+
+String nextToken(String &src) {
+  int a = src.indexOf('<');
+  int b = src.indexOf('>');
+  if (a == -1 || b == -1 || b <= a) return "";
+  String t = src.substring(a+1, b);
+  src.remove(0, b+1);
+  return t;
+}
+void loadObjectsConfig() {
+  if (!SPIFFS.exists(OBJECTS_FILE)) {
+    WLOGln("Objects file not found, defaults used.");
+    return;
+  }
+  File f = SPIFFS.open(OBJECTS_FILE, FILE_READ);
+  if (!f) { WLOGln("loadObjectsConfig: open FAIL"); return; }
+  String content = f.readString();
+  f.close();
+  for (int i = 0; i < 5; i++) {
+    String en  = nextToken(content);
+    String nm  = nextToken(content);
+    String la  = nextToken(content);
+    String lo  = nextToken(content);
+    String tb  = nextToken(content);
+    String sy  = nextToken(content);
+    String cm  = nextToken(content);
+    String ki  = nextToken(content);
+    String in  = nextToken(content);
+    if (in == "") break; // konec/poškozeno
+
+    OBJ[i].enabled = (en == "1");
+    OBJ[i].name    = nm;
+    OBJ[i].latstr  = la.length() ? la : lon; // výchozí předvyplnění: tvoje current lon(lat)
+    OBJ[i].lonstr  = lo.length() ? lo : lat; // a current lat(lon) – viz tvé prohozené názvy
+    OBJ[i].tableCh = (tb.length() ? tb[0] : '/');
+    OBJ[i].symCh   = (sy.length() ? sy[0] : 'L');
+    OBJ[i].comment = cm;
+    OBJ[i].killFlag = (ki == "1");
+    OBJ[i].intervalMin = in.toInt(); if (OBJ[i].intervalMin == 0) OBJ[i].intervalMin = 60;
+  }
+  WLOGln("Objects loaded.");
+}
+
+// Pomocná: bezpečné HTML escapování pro value=""
+String htmlEscape(const String& in) {
+  String out = in;
+  out.replace("&","&amp;"); out.replace("\"","&quot;"); out.replace("<","&lt;"); out.replace(">","&gt;");
+  return out;
+}
+
+// Sestavení HTML stránky „Objects“ dynamicky (bez šablony)
+String buildObjectsHtml() {
+String h = R"(
+<!DOCTYPE html><html lang="cs"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LoRa RX iGate - Objects</title>
+<style>
+body{margin:0;font-family:Arial,sans-serif;background:#f0f0f0}
+h2{font-size:1.8rem;color:#fff;text-align:center;margin:0;padding:15px 0}
+.topnav{background:#1b78e2;position:relative;min-height:60px}
+.button-container{position:absolute;top:50%;right:20px;transform:translateY(-50%);display:flex;gap:10px}
+.btn{padding:10px 18px;background:#1b78e2;color:#fff;border:2px solid #fff;border-radius:10px;cursor:pointer;font-weight:bold;box-shadow:0 2px 4px rgba(0,0,0,.3)}
+.card{background:#fff;box-shadow:2px 2px 12px 1px rgba(140,140,140,.5);padding:16px;margin:16px 0;max-width:1500px;text-align:left;}
+table{width:100%;border-collapse:collapse}
+th,td{border-bottom:1px solid #eee;padding:6px;text-align:left;font-size:14px}
+small{color:#555}
+.act{white-space:nowrap}
+mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+.compact{width:auto;padding:4px 6px}
+.w1ch{width:2.6ch}   /* 1 znak (+padding) */
+.w8ch{width:9.2ch}   /* 8 znaků (+.)    */
+.w9ch{width:10.2ch}  /* 9 znaků         */
+.w10ch{width:11.2ch} /* 10 znaků        */
+.w9name{width:12ch}  /* Name 9 znaků    */
+.wnum{width:7ch}     /* Interval        */
+</style>
+</head><body>
+<div class="topnav"><h2>LoRa RX iGate - Objects</h2>
+<div class="button-container">
+<a href="/"><button class="btn">Back</button></a>
+</div></div>
+<div class="card">
+<form action="/objects" method="POST">
+<table>
+<tr><th>#</th><th>Enable</th><th>NCall</th><th>Lat (DDMM.mmN)</th><th>Lon (DDDMM.mmE)</th><th>Table</th><th>Sym</th><th>Action</th><th>Comment</th><th>Interval (min)</th><th class="act">Now</th></tr>
+)";
+  for (int i=0;i<5;i++){
+    h += "<tr>";
+    h += "<td>"+String(i+1)+"</td>";
+    h += "<td><input type='checkbox' name='o"+String(i)+"_en' "+String(OBJ[i].enabled?"checked":"")+"></td>";
+    h += "<td><input class='compact mono w9name' type='text' maxlength='9' name='o"+String(i)+"_name' value='"+htmlEscape(OBJ[i].name)+"' oninput='this.value=this.value.toUpperCase()'></td>";
+    h += "<td><input  class='compact mono w9ch' type='text' name='o"+String(i)+"_lat' value='"+htmlEscape(OBJ[i].latstr.length()?OBJ[i].latstr:lon)+"'></td>";
+    h += "<td><input class='compact mono w10ch' type='text' name='o"+String(i)+"_lon' value='"+htmlEscape(OBJ[i].lonstr.length()?OBJ[i].lonstr:lat)+"'></td>";
+    h += "<td><select name='o"+String(i)+"_tab'><option value='/'"+String(OBJ[i].tableCh=='/'?" selected":"")+">/</option><option value='\\'"+String(OBJ[i].tableCh=='\\'?" selected":"")+">\\</option></select></td>";
+    h += "<td><input class='compact mono w1ch' type='text' maxlength='1' name='o"+String(i)+"_sym' value='"+String(OBJ[i].symCh)+"' oninput='this.value=this.value.toUpperCase()'></td>";
+    h += "<td><select name='o"+String(i)+"_act'><option value='live'"+String(!OBJ[i].killFlag?" selected":"")+">LIVE *</option><option value='kill'"+String(OBJ[i].killFlag?" selected":"")+">KILL _</option></select></td>";
+    h += "<td><input type='text' maxlength='60' name='o"+String(i)+"_cmt' value='"+htmlEscape(OBJ[i].comment)+"'></td>";
+    h += "<td><input class='compact mono wnum' type='number' min='1' max='10080' name='o"+String(i)+"_int' value='"+String(OBJ[i].intervalMin)+"' style='width:90px'></td>";
+    h += "<td class='act'><button type='submit' class='btn' name='send_now' value='"+String(i)+"'>Send now</button></td>";
+    h += "</tr>";
+  }
+  h += R"(</table><br>
+<small>Tip: Interval je perioda opakovaného odesílání. Po restartu se první odeslání provede ručně („Send now“) nebo až po uplynutí intervalu.</small><br><br>
+<button type="submit" class="btn">Save</button>
+</form></div></body></html>)";
+  return h;
+}
+
+///------------------tracker---------------
+#include "setup_tracker.h" 
+
 void setup() {
   // Inicializace LED pinu
   pinMode(PLED1, OUTPUT);
@@ -1298,7 +1524,7 @@ for (int i = 0; i < MESSAGE_BUFFER_SIZE; i++) {
 
   //-------- SPIFFS --------
   if (!SPIFFS.begin(true)) {
-    Serial.println("Chyba SPIFFS");
+    WLOGln("Chyba SPIFFS");
     return;
   }
 
@@ -1310,8 +1536,8 @@ for (int i = 0; i < MESSAGE_BUFFER_SIZE; i++) {
       fileContent += char(file.read());
     }
     file.close();
-    Serial.println("Soubor konfigurace:");
-    Serial.println(fileContent);
+    WLOGln("Soubor konfigurace:");
+    WLOGln(fileContent);
 
     for (int i = 0; i < MAX_SETTINGS; i++) {
       int start = fileContent.indexOf("<");
@@ -1322,10 +1548,10 @@ for (int i = 0; i < MESSAGE_BUFFER_SIZE; i++) {
       } else {
         nastaveni[i] = "";
       }
-      Serial.print("nastaveni[");
-      Serial.print(i);
-      Serial.print("]: ");
-      Serial.println(nastaveni[i]);
+      WLOGln("nastaveni[");
+      WLOGln(i);
+      WLOGln("]: ");
+      WLOGln(nastaveni[i]);
     }
 
     // Přiřazení nastavení
@@ -1414,9 +1640,17 @@ for (int i = 0; i < MESSAGE_BUFFER_SIZE; i++) {
     Serial.println(coding_rate);
     user = call;
   } else {
-    Serial.println("Soubor config.txt nelze přečíst, použity výchozí hodnoty.");
+    WLOGln("Soubor config.txt nelze přečíst, použity výchozí hodnoty.");
   }
+///-----------konfigurace object-------
+ // Po SPIFFS.begin(...) a po načtení hlavní konfigurace:
+  loadObjectsConfig();
 
+  // Inic. časů nextDueSec při prvním startu (když jsou nulové)
+  uint32_t nowSecInit = (digi_mode==0 && digi_AP==0) ? timeClient.getEpochTime() : (millis()/1000);
+  for (int i=0;i<5;i++){
+    if (OBJ[i].nextDueSec == 0) OBJ[i].nextDueSec = nowSecInit + (OBJ[i].intervalMin*60);
+  }
   //-------- Inicializace OLED --------
   Wire.begin(OLED_SDA, OLED_SCL);
   if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3c, false, false)) {
@@ -1443,13 +1677,23 @@ for (int i = 0; i < MESSAGE_BUFFER_SIZE; i++) {
   //-------- Inicializace podle režimu --------
   if (digi_AP == 1) {
     wifi();
-    AsyncElegantOTA.begin(&server,web_username.c_str(), web_password.c_str());
+    tracker_setup(&server);   // zaregistruje /tracker a načte/vytvoří /tracker.cfg
+    ElegantOTA.begin(&server,web_username.c_str(), web_password.c_str());
+    // WebSerial – pověsit na AsyncWebServer a zapnout BasicAuth
+    WebSerial.begin(&server);  // vytvoří stránku /webserial
+    WebSerial.setAuthentication(web_username.c_str(), web_password.c_str());
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-      Serial.println("Client připojen: " + request->client()->remoteIP().toString());
+      WLOGln("Client připojen: " + request->client()->remoteIP().toString());
       request->send_P(200, "text/html", index_html, procesor);
     });
+    // přesměrování /serial -> /webserial (aby seděl odkaz v UI)
+server.on("/serial", HTTP_GET, [](AsyncWebServerRequest *request){
+  if (!request->authenticate(web_username.c_str(), web_password.c_str()))
+    return request->requestAuthentication();
+  request->redirect("/webserial");
+});
     server.on("/nastaveni", HTTP_GET, [](AsyncWebServerRequest *request) {
-      Serial.println("Client připojen k nastavení: " + request->client()->remoteIP().toString());
+      WLOGln("Client připojen k nastavení: " + request->client()->remoteIP().toString());
        if (!request->authenticate(web_username.c_str(), web_password.c_str())) {
       return request->requestAuthentication();
     }
@@ -1514,17 +1758,93 @@ for (int i = 0; i < MESSAGE_BUFFER_SIZE; i++) {
       if (file) {
         file.print(newConfig);
         file.close();
-        Serial.println("Konfigurace uložena do config.txt: " + newConfig);
+        WLOGln("Konfigurace uložena do config.txt: " + newConfig);
         request->send(200, "text/plain", "Konfigurace uložena, zařízení se restartuje...");
         delay(1000);
         ESP.restart();
       } else {
-        Serial.println("Chyba při ukládání config.txt");
+        WLOGln("Chyba při ukládání config.txt");
         request->send(500, "text/plain", "Chyba při ukládání konfigurace");
       }
     });
+    // === Objects UI ===
+server.on("/objects", HTTP_GET, [](AsyncWebServerRequest *request){
+  if (!request->authenticate(web_username.c_str(), web_password.c_str()))
+    return request->requestAuthentication();
+  String page = buildObjectsHtml();
+  request->send(200, "text/html", page);
+});
+
+server.on("/objects", HTTP_POST, [](AsyncWebServerRequest *request){
+  if (!request->authenticate(web_username.c_str(), web_password.c_str()))
+    return request->requestAuthentication();
+
+  // Pokud přišel parametr 'send_now', víme, že se klikal konkrétní řádek.
+  int sendIdx = -1;
+  if (request->hasParam("send_now", true)) {
+    sendIdx = request->getParam("send_now", true)->value().toInt();
+  }
+
+  // 1) Načti hodnoty z formuláře do OBJ[*] (stejně jako dřív)
+  for (int i=0;i<5;i++){
+    OBJ[i].enabled  = request->hasParam("o"+String(i)+"_en", true);
+    OBJ[i].name     = request->getParam("o"+String(i)+"_name", true)->value();
+    OBJ[i].latstr   = request->getParam("o"+String(i)+"_lat",  true)->value();
+    OBJ[i].lonstr   = request->getParam("o"+String(i)+"_lon",  true)->value();
+    OBJ[i].tableCh  = request->getParam("o"+String(i)+"_tab",  true)->value()[0];
+    OBJ[i].symCh    = request->getParam("o"+String(i)+"_sym",  true)->value()[0];
+    OBJ[i].comment  = request->getParam("o"+String(i)+"_cmt",  true)->value();
+    String act      = request->getParam("o"+String(i)+"_act",  true)->value();
+    OBJ[i].killFlag = (act == "kill");
+    String iv       = request->getParam("o"+String(i)+"_int",  true)->value();
+    uint32_t mins   = iv.toInt(); if (mins==0) mins=60;
+    OBJ[i].intervalMin = mins;
+
+    // normalizace
+    if (OBJ[i].name.length() > 9) OBJ[i].name = OBJ[i].name.substring(0,9);
+    OBJ[i].name.toUpperCase();
+    char c = OBJ[i].symCh; if (c>='a' && c<='z') OBJ[i].symCh = c-32;
+  }
+
+  // 2) Pokud se klikal "Send now", pošli IHNEĎ jen určený objekt (bez ukládání)
+  if (sendIdx >= 0 && sendIdx < 5) {
+    String payload = buildAprsObject(
+      padObjectName9(OBJ[sendIdx].name),
+      OBJ[sendIdx].killFlag,
+      OBJ[sendIdx].latstr.length()?OBJ[sendIdx].latstr:lon,
+      OBJ[sendIdx].lonstr.length()?OBJ[sendIdx].lonstr:lat,
+      OBJ[sendIdx].tableCh,
+      OBJ[sendIdx].symCh,
+      OBJ[sendIdx].comment
+    );
+    sendAprsObject(payload);
+
+    // posuň interní timer pro daný objekt
+    uint32_t nowSec = (digi_mode==0 && digi_AP==0) ? timeClient.getEpochTime() : (millis()/1000);
+    OBJ[sendIdx].nextDueSec = nowSec + (OBJ[sendIdx].intervalMin*60);
+
+    // (volitelné) Nechceme měnit config při "Send now" → neukládej
+    // saveObjectsConfig();  // <- vynecháno
+
+    // vrať znovu stránku (stejnou), případně by šlo přidat "flash" hlášku
+    request->send(200, "text/html", buildObjectsHtml());
+    return;
+  }
+
+  // 3) Jinak je to běžné "Save" → uložit a vrátit stránku
+  saveObjectsConfig();
+
+  // po uložení nastavíme příští termíny
+  uint32_t nowSec = (digi_mode==0 && digi_AP==0) ? timeClient.getEpochTime() : (millis()/1000);
+  for (int i=0;i<5;i++){
+    OBJ[i].nextDueSec = nowSec + (OBJ[i].intervalMin*60);
+  }
+
+  request->send(200, "text/html", buildObjectsHtml());
+});
+///-------------------zpravy------------------------
     server.on("/zpravy", HTTP_GET, [](AsyncWebServerRequest *request) {
-  Serial.println("Client připojen k zprávám: " + request->client()->remoteIP().toString());
+  WLOGln("Client připojen k zprávám: " + request->client()->remoteIP().toString());
   if (!request->authenticate(web_username.c_str(), web_password.c_str())) {
     return request->requestAuthentication();
   }
@@ -1555,20 +1875,27 @@ server.on("/zpravy", HTTP_POST, [](AsyncWebServerRequest *request) {
   LoRa.print("<" + String((char)0xFF) + String((char)0x01) + aprs_message);
   LoRa.endPacket();
   digitalWrite(PLED1, LOW);
-  Serial.println("Zpráva odeslána přes RF: " + aprs_message);
+  WLOGln("Zpráva odeslána přes RF: " + aprs_message);
   request->send_P(200, "text/html", zpravy_html, procesor);
 });
     server.onNotFound(notFound);
     server.begin();
     cas_new = millis() / 1000;
-    Serial.println("AP MODE spuštěn – WiFi AP aktivní, APRS-IS vypnuto.");
+    WLOGln("AP MODE spuštěn – WiFi AP aktivní, APRS-IS vypnuto.");
   } else if (digi_mode == 0) {
     wifi();
-    AsyncElegantOTA.begin(&server);
+    tracker_setup(&server);   // zaregistruje /tracker a načte/vytvoří /tracker.cfg
+    ElegantOTA.begin(&server, web_username.c_str(), web_password.c_str());
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-      Serial.println("Client připojen: " + request->client()->remoteIP().toString());
+      WLOGln("Client připojen: " + request->client()->remoteIP().toString());
       request->send_P(200, "text/html", index_html, procesor);
     });
+    // přesměrování /serial -> /webserial (aby seděl odkaz v UI)
+server.on("/serial", HTTP_GET, [](AsyncWebServerRequest *request){
+  if (!request->authenticate(web_username.c_str(), web_password.c_str()))
+    return request->requestAuthentication();
+  request->redirect("/webserial");
+});
     server.on("/nastaveni", HTTP_GET, [](AsyncWebServerRequest *request) {
       Serial.println("Client připojen k nastavení: " + request->client()->remoteIP().toString());
        if (!request->authenticate(web_username.c_str(), web_password.c_str())) {
@@ -1577,7 +1904,7 @@ server.on("/zpravy", HTTP_POST, [](AsyncWebServerRequest *request) {
       request->send_P(200, "text/html", nastaveni_html, procesor);
     });
    server.on("/map", HTTP_GET, [](AsyncWebServerRequest *request) {
-    Serial.println("Client connected to map: " + request->client()->remoteIP().toString());
+    WLOGln("Client connected to map: " + request->client()->remoteIP().toString());
     request->send_P(200, "text/html", map_html, procesor);
   });
     server.on("/nastaveni", HTTP_POST, [](AsyncWebServerRequest *request) {
@@ -1639,17 +1966,17 @@ server.on("/zpravy", HTTP_POST, [](AsyncWebServerRequest *request) {
       if (file) {
         file.print(newConfig);
         file.close();
-        Serial.println("Konfigurace uložena do config.txt: " + newConfig);
+        WLOGln("Konfigurace uložena do config.txt: " + newConfig);
         request->send(200, "text/plain", "Konfigurace uložena, zařízení se restartuje...");
         delay(1000);
         ESP.restart();
       } else {
-        Serial.println("Chyba při ukládání config.txt");
+        WLOGln("Chyba při ukládání config.txt");
         request->send(500, "text/plain", "Chyba při ukládání konfigurace");
       }
     });
 server.on("/zpravy", HTTP_GET, [](AsyncWebServerRequest *request) {
-  Serial.println("Client připojen k zprávám: " + request->client()->remoteIP().toString());
+  WLOGln("Client připojen k zprávám: " + request->client()->remoteIP().toString());
   if (!request->authenticate(web_username.c_str(), web_password.c_str())) {
     return request->requestAuthentication();
   }
@@ -1661,6 +1988,83 @@ server.on("/zpravy", HTTP_POST, [](AsyncWebServerRequest *request) {
   }
   request->send(403, "text/plain", "Sending messages is only allowed in AP+DIGI mode");
 });
+/////---------object------
+
+server.on("/objects", HTTP_GET, [](AsyncWebServerRequest *request){
+  if (!request->authenticate(web_username.c_str(), web_password.c_str()))
+    return request->requestAuthentication();
+  String page = buildObjectsHtml();
+  request->send(200, "text/html", page);
+});
+
+server.on("/objects", HTTP_POST, [](AsyncWebServerRequest *request){
+  if (!request->authenticate(web_username.c_str(), web_password.c_str()))
+    return request->requestAuthentication();
+
+  // Pokud přišel parametr 'send_now', víme, že se klikal konkrétní řádek.
+  int sendIdx = -1;
+  if (request->hasParam("send_now", true)) {
+    sendIdx = request->getParam("send_now", true)->value().toInt();
+  }
+
+  // 1) Načti hodnoty z formuláře do OBJ[*] (stejně jako dřív)
+  for (int i=0;i<5;i++){
+    OBJ[i].enabled  = request->hasParam("o"+String(i)+"_en", true);
+    OBJ[i].name     = request->getParam("o"+String(i)+"_name", true)->value();
+    OBJ[i].latstr   = request->getParam("o"+String(i)+"_lat",  true)->value();
+    OBJ[i].lonstr   = request->getParam("o"+String(i)+"_lon",  true)->value();
+    OBJ[i].tableCh  = request->getParam("o"+String(i)+"_tab",  true)->value()[0];
+    OBJ[i].symCh    = request->getParam("o"+String(i)+"_sym",  true)->value()[0];
+    OBJ[i].comment  = request->getParam("o"+String(i)+"_cmt",  true)->value();
+    String act      = request->getParam("o"+String(i)+"_act",  true)->value();
+    OBJ[i].killFlag = (act == "kill");
+    String iv       = request->getParam("o"+String(i)+"_int",  true)->value();
+    uint32_t mins   = iv.toInt(); if (mins==0) mins=60;
+    OBJ[i].intervalMin = mins;
+
+    // normalizace
+    if (OBJ[i].name.length() > 9) OBJ[i].name = OBJ[i].name.substring(0,9);
+    OBJ[i].name.toUpperCase();
+    char c = OBJ[i].symCh; if (c>='a' && c<='z') OBJ[i].symCh = c-32;
+  }
+
+  // 2) Pokud se klikal "Send now", pošli IHNEĎ jen určený objekt (bez ukládání)
+  if (sendIdx >= 0 && sendIdx < 5) {
+    String payload = buildAprsObject(
+      padObjectName9(OBJ[sendIdx].name),
+      OBJ[sendIdx].killFlag,
+      OBJ[sendIdx].latstr.length()?OBJ[sendIdx].latstr:lon,
+      OBJ[sendIdx].lonstr.length()?OBJ[sendIdx].lonstr:lat,
+      OBJ[sendIdx].tableCh,
+      OBJ[sendIdx].symCh,
+      OBJ[sendIdx].comment
+    );
+    sendAprsObject(payload);
+
+    // posuň interní timer pro daný objekt
+    uint32_t nowSec = (digi_mode==0 && digi_AP==0) ? timeClient.getEpochTime() : (millis()/1000);
+    OBJ[sendIdx].nextDueSec = nowSec + (OBJ[sendIdx].intervalMin*60);
+
+    // (volitelné) Nechceme měnit config při "Send now" → neukládej
+    // saveObjectsConfig();  // <- vynecháno
+
+    // vrať znovu stránku (stejnou), případně by šlo přidat "flash" hlášku
+    request->send(200, "text/html", buildObjectsHtml());
+    return;
+  }
+
+  // 3) Jinak je to běžné "Save" → uložit a vrátit stránku
+  saveObjectsConfig();
+
+  // po uložení nastavíme příští termíny
+  uint32_t nowSec = (digi_mode==0 && digi_AP==0) ? timeClient.getEpochTime() : (millis()/1000);
+  for (int i=0;i<5;i++){
+    OBJ[i].nextDueSec = nowSec + (OBJ[i].intervalMin*60);
+  }
+
+  request->send(200, "text/html", buildObjectsHtml());
+});
+
     server.onNotFound(notFound);
     server.begin();
     con_aprs();
@@ -1681,14 +2085,14 @@ server.on("/zpravy", HTTP_POST, [](AsyncWebServerRequest *request) {
   //-------- Inicializace LoRa --------
   LoRa.setPins(lora_SS, lora_RST, lora_DIO0);
   if (!LoRa.begin(433775000)) {
-    Serial.println("Starting LoRa failed!");
+    WLOGln("Starting LoRa failed!");
     while (1);
   }
   LoRa.setSpreadingFactor(spreading_factor);
   LoRa.setSignalBandwidth(bandwidth);
   LoRa.setCodingRate4(coding_rate);
   LoRa.disableCrc();
-  Serial.println("LoRa started successfully.");
+  WLOGln("LoRa started successfully.");
 
   //-------- Úvodní zobrazení na OLED --------
   display.clearDisplay();
@@ -1713,15 +2117,40 @@ server.on("/zpravy", HTTP_POST, [](AsyncWebServerRequest *request) {
   display.display();
 
   ///--oveření pozice---
-  Serial.println("Lat: " + String(convertToDecimalDegreesLat(lon), 6));
-  Serial.println("Lon: " + String(convertToDecimalDegreesLon(lat), 6));
+  WLOGln("Lat: " + String(convertToDecimalDegreesLat(lon), 6));
+  WLOGln("Lon: " + String(convertToDecimalDegreesLon(lat), 6));
 
   //---- Úvodní beacon
   posliBeacon();
 }
 
 void loop() {
-  // -- aktualizace času (sekundy)
+
+/////------------tracker.-----------
+tracker_loop(); 
+//--object--------
+// === Objects scheduler (každý průchod loop) ===
+  uint32_t nowSec = (digi_mode==0 && digi_AP==0) ? timeClient.getEpochTime() : (millis()/1000);
+  for (int i=0;i<5;i++){
+    if (!OBJ[i].enabled) continue;
+    if (OBJ[i].intervalMin == 0) continue;
+    if (nowSec >= OBJ[i].nextDueSec) {
+      String payload = buildAprsObject(
+        padObjectName9(OBJ[i].name),
+        OBJ[i].killFlag,
+        OBJ[i].latstr.length()?OBJ[i].latstr:lon,
+        OBJ[i].lonstr.length()?OBJ[i].lonstr:lat,
+        OBJ[i].tableCh,
+        OBJ[i].symCh,
+        OBJ[i].comment
+      );
+      sendAprsObject(payload);
+      OBJ[i].nextDueSec = nowSec + (OBJ[i].intervalMin*60);
+      // (nepovinné) průběžně ukládat: saveObjectsConfig();
+    }
+  }
+
+    // -- aktualizace času (sekundy)
   unsigned long currentTime = millis() / 1000;
 
   if (digi_mode == 0 && digi_AP == 0) {
@@ -1734,7 +2163,7 @@ void loop() {
 
   // -- kontrola Wi-Fi v iGate módu
   if (digi_mode == 0 && digi_AP == 0 && WiFi.status() != WL_CONNECTED) {
-    Serial.println("WiFi no connect...");
+    WLOGln("WiFi no connect...");
     wifi();
   }
 
@@ -1757,7 +2186,7 @@ void loop() {
         client.println(call + ">APZ023,TCPIP*:T#" + live_s + "," + rx_cnt + "," + rf_inet + "," + dx_dist + "," + live + "," + temp_cpu + ",00000000");
         client.flush();
       } else {
-        Serial.println("Connection to APRS server lost");
+        WLOGln("Connection to APRS server lost");
         client.stop();
         con_aprs();
       }
@@ -1768,7 +2197,7 @@ void loop() {
       LoRa.print(telemetry);
       LoRa.endPacket();
       digitalWrite(PLED1, LOW);
-      Serial.println("Telemetry sent via RF: " + telemetry);
+      WLOGln("Telemetry sent via RF: " + telemetry);
     }
 
     live++;
@@ -1791,12 +2220,12 @@ void loop() {
     String packet;
     while (LoRa.available()) packet += (char)LoRa.read();
 
-    Serial.print("Received packet: ");
-    Serial.println(packet);
-    Serial.print(" with RSSI ");
-    Serial.println(LoRa.packetRssi());
-    Serial.print(" with SNR ");
-    Serial.println(LoRa.packetSnr());
+    WLOGln("Received packet: ");
+    WLOGln(packet);
+    WLOGln(" with RSSI ");
+    WLOGln(LoRa.packetRssi());
+    WLOGln(" with SNR ");
+    WLOGln(LoRa.packetSnr());
 
     // Odřízni neabecední prefix
     int firstLetterIndex = -1;
@@ -1805,17 +2234,17 @@ void loop() {
     }
     if (firstLetterIndex != -1) {
       packet = packet.substring(firstLetterIndex);
-      Serial.print("Cleaned packet: ");
-      Serial.println(packet);
+     WLOGln("Cleaned packet: ");
+      WLOGln(packet);
     } else {
-      Serial.println("No letter found, packet ignored.");
+      WLOGln("No letter found, packet ignored.");
       rx_cnt++;
       return;
     }
 
     // ASCII kontrola
     if (!isASCII(packet)) {
-      Serial.println("Packet contains non-ASCII characters.");
+      WLOGln("Packet contains non-ASCII characters.");
       rx_cnt++;
       return;
     }
@@ -1825,7 +2254,7 @@ void loop() {
 // Extrakce volací značky odesílatele (call_d)
 int posGt = packet.indexOf(">");
 if (posGt == -1) {
-  Serial.println("Invalid packet format, missing '>'");
+  WLOGln("Invalid packet format, missing '>'");
   return;
 }
 call_d = packet.substring(0, posGt);
@@ -1864,13 +2293,13 @@ if (colonIndex != -1 && packet[colonIndex + 1] == ':' && colonIndex + 11 < packe
         toSend = toSend.substring(0, colonIndex) + ",qAS," + call + toSend.substring(colonIndex) + "\n";
       }
       if (client.connected()) {
-        Serial.println("Sending packet to iGate: " + toSend);
+        WLOGln("Sending packet to iGate: " + toSend);
         client.println("");
         client.println(toSend);
         client.flush();
         rf_inet++;
       } else {
-        Serial.println("Connection to APRS server lost");
+        WLOGln("Connection to APRS server lost");
         client.stop();
         con_aprs();
       }
@@ -1882,9 +2311,9 @@ if (colonIndex != -1 && packet[colonIndex + 1] == ':' && colonIndex + 11 < packe
         LoRa.print("<" + String((char)0xFF) + String((char)0x01) + modifiedPacket);
         LoRa.endPacket();
         digitalWrite(PLED1, LOW);
-        Serial.println("Packet forwarded via RF: <" + String((char)0xFF) + String((char)0x01) + modifiedPacket);
+        WLOGln("Packet forwarded via RF: <" + String((char)0xFF) + String((char)0x01) + modifiedPacket);
       } else {
-        Serial.println("Packet already digipeated, ignoring.");
+        WLOGln("Packet already digipeated, ignoring.");
       }
     }
 
