@@ -338,24 +338,55 @@ static uint32_t _smartInterval(double vKmh) {
 static void _maybeBeacon() {
   if (!_running || !_haveFix) return;
 
-  const uint32_t nowMs = millis();
-  const uint32_t sinceTx = nowMs - _lastTxMs;
+  const uint32_t nowMs      = millis();
+  const uint32_t sinceTx    = nowMs - _lastTxMs;
   const uint32_t minDeltaMs = (uint32_t)_cfg.minDeltaBeacon * 1000UL;
 
+  // vzdálenost od posledního TX (m)
   double distM = calculateDistance(_lastTxLat, _lastTxLon, _lat, _lon) * 1000.0;
 
+  // --- první beacon po startu (jakmile je fix) ---
+  if (_lastTxMs == 0) {
+    _sendPosition();
+    return;
+  }
+
+  // --- SmartBeacon OFF: čistě periodické vysílání každých slowRate s (s respektem k minDelta) ---
+  if (!_cfg.sbActive) {
+    uint32_t periodMs = (uint32_t)_cfg.slowRate * 1000UL;
+    uint32_t needMs   = (periodMs > minDeltaMs) ? periodMs : minDeltaMs; // ekvivalent max(periodMs, minDeltaMs)
+    if (sinceTx >= needMs) {
+      _sendPosition();
+    }
+    return;
+  }
+
+  // --- SmartBeacon ON ---
+  // 1) Zatáčka (dynamický práh dle rychlosti)
   bool turnTrig = false;
   if (!isnan(_courseDeg) && !isnan(_lastTxCourse)) {
     double degDelta = _angleDelta(_courseDeg, _lastTxCourse);
-    double dynTurn = _cfg.turnMinDeg + (_cfg.turnSlope / (_speedKmh>0.5 ? _speedKmh : 0.5));
-    if (degDelta >= dynTurn && sinceTx >= minDeltaMs) turnTrig = true;
+    double v = (_speedKmh > 0.5) ? _speedKmh : 0.5; // ochrana proti dělení 0
+    double dynTurn = _cfg.turnMinDeg + (_cfg.turnSlope / v);
+    if (degDelta >= dynTurn) turnTrig = true;
   }
 
+  // 2) Časový interval dle rychlosti
   uint32_t needSec = _smartInterval(_speedKmh);
-  bool timeTrig = (sinceTx >= needSec*1000UL);
-  bool distTrig = (distM >= _cfg.minTxDist) && (sinceTx >= minDeltaMs);
+  bool timeTrig = (sinceTx >= needSec * 1000UL);
 
-  if (turnTrig || (timeTrig && distTrig)) _sendPosition();
+  // 3) Ujetá vzdálenost
+  bool distTrig = (distM >= _cfg.minTxDist);
+
+  // --- OR logika s pojistkou minDelta (aby to nespamovalo) ---
+  bool shouldTx = false;
+  if (turnTrig  && sinceTx >= minDeltaMs) shouldTx = true;
+  if (distTrig  && sinceTx >= minDeltaMs) shouldTx = true;
+  if (timeTrig  && sinceTx >= minDeltaMs) shouldTx = true;
+
+  if (shouldTx) {
+    _sendPosition();
+  }
 }
 
 // ---------- NMEA parser (RMC + GGA) ----------
