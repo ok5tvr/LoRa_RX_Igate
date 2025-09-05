@@ -146,15 +146,29 @@ static String _fmtLon(double lon) {
   return String(buf);
 }
 
-// APRS compressed (4+4 base91)
+// Bezpečné komprimované kódování (4+4 base91)
 static void _encodeCompressed(double lat, double lon, char out8[9]) {
+  // Clamp podle APRS spec (vyhnout se přesně 90/180 kvůli přetečení rozsahu)
+  if (isnan(lat) || isnan(lon)) { for (int i=0;i<8;i++) out8[i]='!'; out8[8]='\0'; return; }
+  if (lat >  89.999999) lat =  89.999999;
+  if (lat < -89.999999) lat = -89.999999;
+  if (lon > 179.999999) lon = 179.999999;
+  if (lon < -179.999999) lon = -179.999999;
+
   // Y = 90 - lat; X = 180 + lon
-  long y = (long)floor(380926.0 * (90.0 - lat));
-  long x = (long)floor(190463.0 * (180.0 + lon));
-  for (int i=3;i>=0;i++){ out8[i]   = (char)((y % 91) + 33); y /= 91; }
-  for (int i=7;i>=4;i--){ out8[i]   = (char)((x % 91) + 33); x /= 91; }
+  double Y = 90.0 - lat;
+  double X = 180.0 + lon;
+
+  // Přepočet na celočíselné mřížky dle spec
+  uint32_t y = (uint32_t)floor(380926.0 * Y + 0.5);  // zaokrouhlení pomáhá stabilitě
+  uint32_t x = (uint32_t)floor(190463.0 * X + 0.5);
+
+  // 4 znaky lat (y), 4 znaky lon (x), každý 0..90 → +33 do ASCII
+  for (int i = 3; i >= 0; --i) { out8[i]   = (char)((y % 91U) + 33); y /= 91U; }
+  for (int i = 7; i >= 4; --i) { out8[i]   = (char)((x % 91U) + 33); x /= 91U; }
   out8[8] = '\0';
 }
+
 
 // rychlý parser CSV pole
 static int _splitCSV(const String& s, String* f, int maxf) {
@@ -290,15 +304,23 @@ static String _buildPayload_Uncompressed() {
 static String _buildPayload_Compressed() {
   char b91[9];
   _encodeCompressed(_lat, _lon, b91);
-  String payload = "!";
-  payload += _cfg.tableCh;
-  payload += String(b91).substring(0,4);
-  payload += String(b91).substring(4,8);
-  payload += _cfg.symCh;
+
+  // Zkonstruuj payload přímo po znacích → méně alokací, méně fragmentace
+  String payload;
+  payload.reserve(1 + 1 + 8 + 1 + 1 + 32); // ! + table + 8 + sym + mezera + komentář (odhad)
+  payload += '!';
+  payload += _cfg.tableCh;       // '/' nebo '\\'
+
+  // přidej přesně 8 znaků base91 (4 lat + 4 lon)
+  for (int i = 0; i < 8; ++i) payload += b91[i];
+
+  payload += _cfg.symCh;         // APRS symbol
+
   String cmt = _buildComment();
-  if (cmt.length()) { payload += " "; payload += cmt; }
+  if (cmt.length()) { payload += ' '; payload += cmt; }
   return payload;
 }
+
 
 static void _sendPosition() {
   if (!_haveFix) return;
