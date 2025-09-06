@@ -115,6 +115,11 @@ static uint32_t          _monitorUntilMs  = 0;
 // --- SSE (Server-Sent Events) pro živé NMEA ---
 static AsyncEventSource  _sse("/api/gps"); // pozor na kolize se statikou
 
+//----externí promenné-------
+extern String lastStation;
+extern double lastStationLat;   // << přidáno
+extern double lastStationLon;   // << přidán
+
 // ---------- Pomocné funkce ----------
 static double _toRad(double d){ return d * (M_PI/180.0); }
 static double _norm360(double a){ while(a<0) a+=360; while(a>=360) a-=360; return a; }
@@ -467,6 +472,47 @@ static void _gpsRead() {
     }
   }
 }
+//--------- kompas-------
+static double _bearingDeg(double lat1, double lon1, double lat2, double lon2) {
+  if (isnan(lat1) || isnan(lon1) || isnan(lat2) || isnan(lon2)) return NAN;
+  const double d2r = M_PI / 180.0;
+  const double r2d = 180.0 / M_PI;
+  double phi1 = lat1 * d2r, phi2 = lat2 * d2r;
+  double dLon = (lon2 - lon1) * d2r;
+  double y = sin(dLon) * cos(phi2);
+  double x = cos(phi1) * sin(phi2) - sin(phi1) * cos(phi2) * cos(dLon);
+  double brng = atan2(y, x) * r2d;      // -180..+180 od severu
+  if (brng < 0) brng += 360.0;
+  return brng;                          // 0..360 (0=N)
+}
+
+static void _drawCompass(int cx, int cy, int r, double azDeg) {
+  // obrys kruhu + značky stran
+  display.drawCircle(cx, cy, r, WHITE);
+  display.drawLine(cx, cy - r, cx, cy - r + 3, WHITE); // N
+  display.drawLine(cx + r, cy, cx + r - 3, cy, WHITE); // E
+  display.drawLine(cx, cy + r, cx, cy + r - 3, WHITE); // S
+  display.drawLine(cx - r, cy, cx - r + 3, cy, WHITE); // W
+
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(cx - 2, cy - r - 8); display.print("N");
+
+  // šipka (0°=N). GFX 0 rad = +X → korekce
+  double rad = (90.0 - azDeg) * M_PI / 180.0;
+  int x2 = cx + (int)round((r - 3) * cos(rad));
+  int y2 = cy - (int)round((r - 3) * sin(rad));
+  display.drawLine(cx, cy, x2, y2, WHITE);
+
+  // hlavička šipky
+  double radL = rad + 0.18, radR = rad - 0.18; // ~±10°
+  int hx1 = x2 - (int)round(6 * cos(radL));
+  int hy1 = y2 + (int)round(6 * sin(radL));
+  int hx2 = x2 - (int)round(6 * cos(radR));
+  int hy2 = y2 + (int)round(6 * sin(radR));
+  display.drawLine(x2, y2, hx1, hy1, WHITE);
+  display.drawLine(x2, y2, hx2, hy2, WHITE);
+}
 
 // ---------- OLED ----------
 static void _oledDraw() {
@@ -503,6 +549,23 @@ static void _oledDraw() {
   String rx = "RX: " + (lastStation.length()? lastStation : String("-"));
   if (rx.length()>21) rx = rx.substring(0,21);
   display.print(rx);
+
+  // --- kompas vpravo: azimut z aktuální GPS → poslední stanice ---
+if (_haveFix && !isnan(lastStationLat) && !isnan(lastStationLon)) {
+  double az = _bearingDeg(_lat, _lon, lastStationLat, lastStationLon);
+
+  // kompas vpravo uprostřed
+  int cx = 104;  // střed X
+  int cy = 28;   // střed Y
+  int r  = 22;   // poloměr tak, aby se vešel
+  _drawCompass(cx, cy, r, az);
+
+  // číselná hodnota
+  display.setTextSize(1);
+  display.setCursor(cx - 12, cy + r + 8);
+  char azbuf[8]; snprintf(azbuf, sizeof(azbuf), "%3.0f", az);
+  display.print(azbuf); display.print((char)247); // ° znak
+}
 
   display.display();
 #endif

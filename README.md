@@ -1,3 +1,31 @@
+# LoRa RX iGate - 4.7.00
+**OLED Compass with Bearing to the Last Decoded Station**
+
+The tracker now shows a mini compass rose with an arrow pointing to the bearing from the tracker’s current GPS position to the last decoded station. The station callsign is shown alongside.
+
+**How it works**
+
+On receiving an APRS position, the tracker stores the callsign + coordinates of the last station.
+On every OLED refresh, it computes the bearing (0–360°, 0° = North) from the current GPS (_lat/_lon) to that station.
+The OLED (128×64) renders a compass with an arrow on the right and the numeric bearing below it.
+When the compass appears
+Valid GPS fix is available (_haveFix == true), and
+Station coordinates are known (lastStationLat/Lon are not NaN).
+If there is no fix or no station with a valid position yet, the compass stays hidden (default screen remains).
+
+**Implementation details**
+
+New globals: lastStationLat, lastStationLon (next to lastStation; exported as extern).
+Bearing computation: _bearingDeg(myLat, myLon, lastStationLat, lastStationLon).
+Rendering helper: _drawCompass(cx, cy, r, az) (circle + N + arrow).
+Default layout for 128×64: center (104, 28), radius 22 px; adjust for your display/fonts.
+
+**Notes**
+
+Bearing updates live as the tracker moves.
+Optionally hide the compass when distance is negligible (same location).
+Standard fields remain: LAT, LON, ALT, SPD and RX: CALLSIGN (left side).
+
 # LoRa RX iGate - 4.6.00
 **WebSerial** (new) – debug output directly in the browser, no USB cable required.
 

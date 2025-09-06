@@ -35,7 +35,7 @@ String password = "xxxxx";
 String ap_password = "mojeheslo123"; // Heslo pro AP
 
 //-------- Verze -----------------
-String verze = "4.6.00"; // Aktualizováno pro editaci config.txt
+String verze = "4.7.00"; // Aktualizováno pro editaci config.txt
 
 //-------- APRS ID ---------------
 String call = "OK5TVR-17";
@@ -91,6 +91,8 @@ String call_d = ""; // Call sign of the station
 int digi_mode = 1;
 int digi_AP = 0;
 String lastStation = "";
+double lastStationLat = NAN;   // << přidáno
+double lastStationLon = NAN;   // << přidáno
 
 //-------- OLED Display -----------
 #ifndef OLED_SDA
@@ -2416,8 +2418,13 @@ if (colonIndex != -1 && packet[colonIndex + 1] == ':' && colonIndex + 11 < packe
     // věk záznamu
     buffer_age[idx] = cas_new;
     lastStation = call_d;
+
+    lastStationLat  = buffer_lat[idx];
+    lastStationLon  = buffer_lon[idx];
+
     cas_reset   = cas_new;
 
+    
     // OLED refresh (seznam 5 položek)
     display.clearDisplay();
     display.setTextColor(WHITE);
