@@ -35,7 +35,7 @@ String password = "xxxxx";
 String ap_password = "mojeheslo123"; // Heslo pro AP
 
 //-------- Verze -----------------
-String verze = "4.5.00"; // Aktualizováno pro editaci config.txt
+String verze = "4.6.00"; // Aktualizováno pro editaci config.txt
 
 //-------- APRS ID ---------------
 String call = "OK5TVR-17";

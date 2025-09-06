@@ -1,3 +1,6 @@
+# LoRa RX iGate - 4.6.00
+**WebSerial** (new) – debug output directly in the browser, no USB cable required.
+
 # LoRa RX iGate - 4.5.00
 **Tracker**
 
