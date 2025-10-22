@@ -15,7 +15,8 @@
 #include <SPIFFS.h>
 #include "board_pins.h"
 #include <WebSerial.h>
-
+//---------igate rx--> inet ------
+#define IGATE_BIDIRECTIONAL false // Set to true to enable bidirectional iGate (transmit packets received via LoRa to RF)
 
 //----hesla--------
 String web_username = "admin"; // Výchozí uživatelské jméno
@@ -35,7 +36,7 @@ String password = "xxxxx";
 String ap_password = "mojeheslo123"; // Heslo pro AP
 
 //-------- Verze -----------------
-String verze = "4.7.00"; // Aktualizováno pro editaci config.txt
+String verze = "5.0.00"; // Aktualizováno pro editaci config.txt
 
 //-------- APRS ID ---------------
 String call = "OK5TVR-17";
@@ -164,6 +165,33 @@ WiFiClient client;
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "0.cz.pool.ntp.org", 3600, 60000);
 AsyncWebServer server(80);
+
+// --- APRS-IS stav / poslední TX ---
+unsigned long last_inet_tx_sec = 0;   // v sekundách (epoch v iGate; uptime v AP/DIGI)
+String aprsStatusString() {
+  if (digi_AP == 1)      return "Off (AP mode)";
+  if (digi_mode == 1)    return "Off (DIGI only)";
+  // iGate:
+  return client.connected() ? "Connected" : "Disconnected";
+}
+String aprsServerString() {
+  if (digi_AP == 1 || digi_mode == 1) return "-";
+  return String(servername) + ":" + String(aprs_port);
+}
+String inetTxString() {
+  // zobrazení „kdy naposledy šel rámec do Internetu“ (jen iGate)
+  if (digi_AP == 1 || digi_mode == 1) return "Off in this mode";
+  if (last_inet_tx_sec == 0) return "no traffic yet";
+
+  unsigned long nowSec = (digi_mode==0 && digi_AP==0) ? timeClient.getEpochTime() : (millis()/1000);
+  unsigned long diff = (nowSec >= last_inet_tx_sec) ? (nowSec - last_inet_tx_sec) : 0;
+
+  if (diff < 2)      return "just now";
+  if (diff < 60)     return String(diff) + " s ago";
+  if (diff < 3600)   return String(diff/60) + " min ago";
+  return String(diff/3600) + " h ago";
+  
+}
 
 ///-------------------aprs symboly base64
 bool iconSet = false;
@@ -381,6 +409,9 @@ h3 {font-size: 1rem;}
 <p>Connection:</p>
 <p>RSSI: %RSSI% dBm</p>
 <p>IP: %IP_adr%</p>
+<p>APRS-IS: %APRS_SERVER%</p>
+<p>Status: %APRS_STATUS%</p>
+<p>Inet TX: %INET_TX%</p>
 <p>Time Diff: %cas_dif%</p>
 <p>CPU Temperature: %URL1%</p>
 </body></html>
@@ -806,6 +837,9 @@ String procesor(const String& var) {
   if (var == "CALL") return call;
   if (var == "RSSI") return String(WiFi.RSSI());
   if (var == "IP_adr") return IP;
+  if (var == "APRS_SERVER") return aprsServerString();
+  if (var == "APRS_STATUS") return aprsStatusString();
+  if (var == "INET_TX")     return inetTxString();
   if (var == "PAK1") return buffer[0];
   if (var == "T0") return buffer_cas[0];
   if (var == "RS0") return buffer_RSSI[0];
@@ -1048,6 +1082,7 @@ void wifi() {
   }
 }
 
+///------------conect aprs-------------
 void con_aprs() {
   WLOGln("\nStarting APRS connection...");
   WLOGln("Připojuji se k APRS serveru: " + String(servername) + ":" + String(aprs_port));
@@ -1067,6 +1102,7 @@ void con_aprs() {
     client.flush();
     client.println(call + ">APZ023,TCPIP*:>https://github.com/ok5tvr/LoRa_RX_Igate");
     client.flush();
+    last_inet_tx_sec = timeClient.getEpochTime(); // spojení + hlavičky = „TX“
   } else {
     WLOGln("APRS connection failed to: " + String(servername) + ":" + String(aprs_port));
   }
@@ -1196,6 +1232,7 @@ void posliBeacon() {
       client.println(beacon);
       client.flush();
       WLOGln("BEACON poslán na APRS-IS: " + beacon);
+       last_inet_tx_sec = timeClient.getEpochTime(); // spojení + hlavičky = „TX“
     } else {
       WLOGln("BEACON – není spojení k APRS-IS, reconnect...");
       if (WiFi.status() == WL_CONNECTED) {
@@ -1348,8 +1385,10 @@ void sendAprsObject(const String& payload) {
   if (digi_mode == 0 && digi_AP == 0) {              // iGate → APRS-IS
     if (!client.connected()) { client.stop(); con_aprs(); }
     frame = call + ">APZ023,TCPIP*:" + payload;
-    client.println(frame); client.flush();
+    client.println(frame); 
+    client.flush();
     WLOGln("OBJECT → APRS-IS: " + frame);
+    last_inet_tx_sec = timeClient.getEpochTime(); // spojení + hlavičky = „TX“
   } else {                                           // Digi / Digi+AP → RF
     frame = call + ">APZ023:" + payload;
     digitalWrite(PLED1, HIGH);
@@ -1492,6 +1531,22 @@ mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",mo
 
 ///------------------tracker---------------
 #include "setup_tracker.h" 
+
+// Vloží správný q-construct (qAR nebo qAO) do hlavičky APRS rámce.
+// Pokud už hlavička obsahuje ",qA?" (tj. q-construct), paket se nechá beze změny.
+String injectQConstruct(const String& pkt, const String& igateCall, bool bidirectional) {
+  int colon = pkt.indexOf(':');
+  if (colon < 0) return pkt;  // žádný payload → nic nevkládat
+
+  String head = pkt.substring(0, colon);
+  // Pokud už existuje nějaký q-construct, nic nepřidávej
+  if (head.indexOf(",qA") >= 0) return pkt;
+
+  String q = bidirectional ? "qAR" : "qAO";
+  // vlož ",qAR,IGATE" nebo ",qAO,IGATE" těsně před ':'
+  return head + "," + q + "," + igateCall + pkt.substring(colon);
+}
+
 
 void setup() {
   // Inicializace LED pinu
@@ -1888,6 +1943,9 @@ server.on("/zpravy", HTTP_POST, [](AsyncWebServerRequest *request) {
     wifi();
     tracker_setup(&server);   // zaregistruje /tracker a načte/vytvoří /tracker.cfg
     ElegantOTA.begin(&server, web_username.c_str(), web_password.c_str());
+        // WebSerial – pověsit na AsyncWebServer a zapnout BasicAuth
+    WebSerial.begin(&server);  // vytvoří stránku /webserial
+    WebSerial.setAuthentication(web_username.c_str(), web_password.c_str());
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
       WLOGln("Client připojen: " + request->client()->remoteIP().toString());
       request->send_P(200, "text/html", index_html, procesor);
@@ -2187,6 +2245,7 @@ tracker_loop();
       if (client.connected()) {
         client.println(call + ">APZ023,TCPIP*:T#" + live_s + "," + rx_cnt + "," + rf_inet + "," + dx_dist + "," + live + "," + temp_cpu + ",00000000");
         client.flush();
+        last_inet_tx_sec = timeClient.getEpochTime(); // spojení + hlavičky = „TX“
       } else {
         WLOGln("Connection to APRS server lost");
         client.stop();
@@ -2290,15 +2349,20 @@ if (colonIndex != -1 && packet[colonIndex + 1] == ':' && colonIndex + 11 < packe
     if (digi_mode == 0 && digi_AP == 0) {
       String toSend = packet;
       toSend.trim();
-      int colonIndex = toSend.indexOf(":");
-      if (colonIndex >= 0) {
-        toSend = toSend.substring(0, colonIndex) + ",qAS," + call + toSend.substring(colonIndex) + "\n";
-      }
+      //int colonIndex = toSend.indexOf(":");
+      //if (colonIndex >= 0) {
+       // toSend = toSend.substring(0, colonIndex) + ",qAS," + call + toSend.substring(colonIndex) + "\n";
+      //}
+
+       // vlož q-construct podle přepínače (RX-only = qAO, obousměrné = qAR)
+      toSend = injectQConstruct(toSend, call, IGATE_BIDIRECTIONAL);
+
       if (client.connected()) {
         WLOGln("Sending packet to iGate: " + toSend);
         client.println("");
         client.println(toSend);
         client.flush();
+        last_inet_tx_sec = timeClient.getEpochTime(); // spojení + hlavičky = „TX“
         rf_inet++;
       } else {
         WLOGln("Connection to APRS server lost");

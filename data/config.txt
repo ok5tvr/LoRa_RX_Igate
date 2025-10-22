@@ -1,7 +1,7 @@
 //----------------lora RX igate------------
 /// ------------wifi-------------
 wifi ssid <Vlas_dolni_vlkys>
-wifi heslo <XXXXXX>
+wifi heslo <toxxxxxx>
 
 /// ------- ID APRS -------------------------
 call <OK5TVR-17>
@@ -26,8 +26,8 @@ primaryDNS <192.168.1.1>
 secondaryDNS <192.168.1.1>
 
 ///----------digi------------
-digi <1>
-digi_AP <1>
+digi <0>
+digi_AP <0>
 ap_password <mojeheslo123>
 
 ///---------lora------------
